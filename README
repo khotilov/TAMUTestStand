@@ -4,3 +4,13 @@ Dependencies:
 
 XDAQ
 EMULIB
+
+In EMULIB it need the following packages:
+emu/base
+emu/soap
+emu/emuDCS/PeripheralCore
+emu/emuDCS/PeripheralApps
+emu/emuDCS/OnlineDB
+
+Itself, it is expected to be located at 
+emu/emuDCS/TAMUTestStand
