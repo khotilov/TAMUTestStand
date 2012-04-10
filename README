@@ -1,6 +1,7 @@
 Software for testing of the new Trigger Motherboard for CMS Muond Endcap at TAMU.
 
-Dependencies:
+
+   * Dependencies:
 
 XDAQ
 EMULIB
@@ -14,3 +15,9 @@ emu/emuDCS/OnlineDB
 
 Itself, it is expected to be located at 
 emu/emuDCS/TAMUTestStand
+
+
+   * Checking out:
+
+git clone git://github.com/khotilov/TAMUTestStand.git
+ 
