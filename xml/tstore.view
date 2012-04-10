@@ -1,0 +1,1451 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<tstore:configuration xmlns:tstore="urn:xdaq-tstore:1.0">
+<!-- note about "diff" views:
+	in general these should select, on each row, the editable values for both the old and new configurations,
+	alternating with one column from the old configuration, then the corresponding column from the new one, etc
+	but only rows which have changed or rows whose 'child' records have changed. The application currently
+	assumes that the columns will be named with the normal column name, a space, and then the config ID.
+	
+	The queries look quite complicated but in fact they are mostly automatically generated. 
+	The following SQL queries can be used to generate parts of the query:
+	
+	Create the column list in the select clause:
+	
+		select 'oldconfig.'||column_name||' "'||substr(column_name,0,22)||' $OLD_EMU_CONFIG_ID",newconfig.'||column_name||' "'||substr(column_name,0,22)||' $NEW_EMU_CONFIG_ID",' from user_tab_cols
+		where table_name='<your table name>'
+		and column_name not like '%_CONFIG_ID'
+		order by column_name;
+
+	Create the part of the where condition which selects only records which have been changed (this should all be in parentheses):
+	
+		select 'oldconfig.'||column_name||'!=newconfig.'||column_name||' or '
+		from user_tab_cols
+		where table_name='<your table name>'
+		and column_name not like '%_CONFIG_ID'
+		order by column_name
+		
+	You will need to remove a trailing comma or " or " from the results of these queries, and you also might 
+	want to remove other columns which cannot be edited. Apart from that you
+	can paste them into a query similar to the existing ones. 
+-->
+  <tstore:view id="urn:tstore-view-SQL:EMUsystem">
+    <tstore:connection dbname="XE" xmlns:tstore="urn:xdaq-tstore:1.0"/>
+    <!-- <tstore:connection dbname="cms_rcms" xmlns:tstore="urn:xdaq-tstore:1.0"/> -->
+
+    <!-- Add some data type mappings. TStore doesn't handle the data types well without mappings
+	 mostly because it doesn't know which tables the values in queries come from so it can't
+	 look at the column check constraints etc. to figure out what types to read the results as.
+	 The list of column types that recquire such mapping to be provided:
+	  - unsigned int 64
+         Also, the "unsigned short" type would need to be included here, but it is so widely used
+         that it's simpler to deal with it programmatically.
+	 -->
+    <tstore:maptype source="unsigned int 64" column=".*config_id$"/>
+
+
+    <!-- QUERY TO GET CONFIG IDs -->
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="getconfigids" expectedRows="1">
+      <sql:parameter name="TABLE">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="COLUMN">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="SIDE">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select max(NVL($COLUMN,0)) as $COLUMN from $TABLE where EMU_ENDCAP_SIDE='$SIDE']]>
+    </sql:query>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="maxconfigid" expectedRows="1">
+      <sql:parameter name="SIDE">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select max(NVL(EMU_CONFIG_ID,0)) as EMU_CONFIG_ID from EMU_CONFIGURATION where EMU_ENDCAP_SIDE='$SIDE']]>
+    </sql:query>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="getallconfigids">
+      <sql:parameter name="SIDE">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="MAX">
+        <![CDATA[50]]>
+      </sql:parameter>
+      <![CDATA[select EMU_CONFIG_ID from (select EMU_CONFIG_ID from EMU_CONFIGURATION where EMU_ENDCAP_SIDE='$SIDE' order by EMU_CONFIG_ID desc) where rownum<=$MAX]]>
+    </sql:query>
+
+
+    <!-- TABLE: EMU_CONFIGURATION -->
+
+    <sql:insert xmlns:sql="urn:tstore-view-SQL" name="configuration">
+      <sql:table name="EMU_CONFIGURATION"/>
+    </sql:insert>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="configuration" expectedRows="1">
+      <sql:parameter name="EMU_CONFIG_ID">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select * from EMU_CONFIGURATION where EMU_CONFIG_ID=$EMU_CONFIG_ID]]>
+    </sql:query>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="configuration_all" expectedRows="1">
+      <sql:parameter name="ID">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select * from EMU_CONFIGURATION where EMU_CONFIG_ID=$ID]]>
+    </sql:query>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="configuration_ids_side">
+      <sql:parameter name="SIDE">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="MAX">
+        <![CDATA[50]]>
+      </sql:parameter>
+      <![CDATA[select EMU_CONFIG_ID from (select EMU_CONFIG_ID from EMU_CONFIGURATION where EMU_ENDCAP_SIDE='$SIDE' order by EMU_CONFIG_ID desc) where rownum<=$MAX]]>
+    </sql:query>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="configuration_maxid_side" expectedRows="1">
+      <sql:parameter name="SIDE">
+        <![CDATA[]]>
+      </sql:parameter>
+        <![CDATA[select max(NVL(EMU_CONFIG_ID,0)) as EMU_CONFIG_ID from EMU_CONFIGURATION where EMU_ENDCAP_SIDE='$SIDE']]>
+    </sql:query>
+
+
+    <!-- TABLE: EMU_PERIPHERALCRATE -->
+
+    <sql:insert xmlns:sql="urn:tstore-view-SQL" name="peripheralcrate">
+      <sql:table name="EMU_PERIPHERALCRATE"/>
+    </sql:insert>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="peripheralcrate" expectedRows="30">
+      <sql:parameter name="EMU_CONFIG_ID">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select * from EMU_PERIPHERALCRATE where EMU_CONFIG_ID=$EMU_CONFIG_ID order by CRATEID]]>
+    </sql:query>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="peripheralcrate_all" expectedRows="30">
+      <sql:parameter name="ID">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select * from EMU_PERIPHERALCRATE where EMU_CONFIG_ID=$ID order by CRATEID]]>
+    </sql:query>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="peripheralcrate_diff" expectedRows="30">
+      <sql:parameter name="OLD_EMU_CONFIG_ID">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="NEW_EMU_CONFIG_ID">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select OLDCONFIG.crateid,oldconfig.periph_config_id "PERIPH_CONFIG_ID $OLD_EMU_CONFIG_ID",NEWconfig.periph_config_id "PERIPH_CONFIG_ID $NEW_EMU_CONFIG_ID"
+from EMU_PERIPHERALCRATE oldconfig,EMU_PERIPHERALCRATE newconfig
+where
+oldconfig.EMU_CONFIG_ID=$OLD_EMU_CONFIG_ID
+and newconfig.EMU_CONFIG_ID=$NEW_EMU_CONFIG_ID
+and oldconfig.crateid=newconfig.crateID]]>
+    </sql:query>
+
+
+    <!-- TABLE: EMU_CCB -->
+
+    <sql:insert xmlns:sql="urn:tstore-view-SQL" name="ccb">
+      <sql:table name="EMU_CCB"/>
+    </sql:insert>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="ccb" expectedRows="1">
+      <sql:parameter name="EMU_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="XXX_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select * from EMU_CCB where EMU_CONFIG_ID=$EMU_CONFIG_ID and PERIPH_CONFIG_ID=$XXX_CONFIG_ID]]>
+    </sql:query>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="ccb_all" expectedRows="30">
+      <sql:parameter name="ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select * from EMU_CCB where EMU_CONFIG_ID=$ID order by CCB_CONFIG_ID]]>
+    </sql:query>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="ccb_diff" expectedRows="1">
+      <sql:parameter name="OLD_EMU_CONFIG_ID">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="OLD_XXX_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="NEW_EMU_CONFIG_ID">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="NEW_XXX_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select
+oldconfig.CCBMODE "CCBMODE $OLD_EMU_CONFIG_ID",newconfig.CCBMODE "CCBMODE $NEW_EMU_CONFIG_ID",
+oldconfig.CCB_FIRMWARE_DAY "CCB_FIRMWARE_DAY $OLD_EMU_CONFIG_ID",newconfig.CCB_FIRMWARE_DAY "CCB_FIRMWARE_DAY $NEW_EMU_CONFIG_ID",
+oldconfig.CCB_FIRMWARE_MONTH "CCB_FIRMWARE_MONTH $OLD_EMU_CONFIG_ID",newconfig.CCB_FIRMWARE_MONTH "CCB_FIRMWARE_MONTH $NEW_EMU_CONFIG_ID",
+oldconfig.CCB_FIRMWARE_YEAR "CCB_FIRMWARE_YEAR $OLD_EMU_CONFIG_ID",newconfig.CCB_FIRMWARE_YEAR "CCB_FIRMWARE_YEAR $NEW_EMU_CONFIG_ID",
+oldconfig.L1ADELAY "L1ADELAY $OLD_EMU_CONFIG_ID",newconfig.L1ADELAY "L1ADELAY $NEW_EMU_CONFIG_ID",
+oldconfig.TTCRXCOARSEDELAY "TTCRXCOARSEDELAY $OLD_EMU_CONFIG_ID",newconfig.TTCRXCOARSEDELAY "TTCRXCOARSEDELAY $NEW_EMU_CONFIG_ID",
+oldconfig.TTCRXFINEDELAY "TTCRXFINEDELAY $OLD_EMU_CONFIG_ID",newconfig.TTCRXFINEDELAY "TTCRXFINEDELAY $NEW_EMU_CONFIG_ID",
+oldconfig.TTCRXID "TTCRXID $OLD_EMU_CONFIG_ID",newconfig.TTCRXID "TTCRXID $NEW_EMU_CONFIG_ID"
+from EMU_CCB oldconfig,EMU_CCB newconfig where
+oldconfig.EMU_CONFIG_ID=$OLD_EMU_CONFIG_ID and oldconfig.PERIPH_CONFIG_ID=$OLD_XXX_CONFIG_ID
+and newconfig.EMU_CONFIG_ID=$NEW_EMU_CONFIG_ID and newconfig.PERIPH_CONFIG_ID=$NEW_XXX_CONFIG_ID
+and
+(oldconfig.CCBMODE!=newconfig.CCBMODE or 
+oldconfig.CCB_FIRMWARE_DAY!=newconfig.CCB_FIRMWARE_DAY or 
+oldconfig.CCB_FIRMWARE_MONTH!=newconfig.CCB_FIRMWARE_MONTH or 
+oldconfig.CCB_FIRMWARE_YEAR!=newconfig.CCB_FIRMWARE_YEAR or 
+oldconfig.L1ADELAY!=newconfig.L1ADELAY or 
+oldconfig.TTCRXCOARSEDELAY!=newconfig.TTCRXCOARSEDELAY or 
+oldconfig.TTCRXFINEDELAY!=newconfig.TTCRXFINEDELAY or 
+oldconfig.TTCRXID!=newconfig.TTCRXID)
+]]>
+    </sql:query>
+
+
+    <!-- TABLE: EMU_MPC -->
+
+    <sql:insert xmlns:sql="urn:tstore-view-SQL" name="mpc">
+      <sql:table name="EMU_MPC"/>
+    </sql:insert>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="mpc" expectedRows="1">
+      <sql:parameter name="EMU_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="XXX_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select * from EMU_MPC where EMU_CONFIG_ID=$EMU_CONFIG_ID and PERIPH_CONFIG_ID=$XXX_CONFIG_ID]]>
+    </sql:query>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="mpc_all" expectedRows="30">
+      <sql:parameter name="ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select * from EMU_MPC where EMU_CONFIG_ID=$ID order by MPC_CONFIG_ID]]>
+    </sql:query>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="mpc_diff" expectedRows="1">
+      <sql:parameter name="OLD_EMU_CONFIG_ID">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="OLD_XXX_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="NEW_EMU_CONFIG_ID">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="NEW_XXX_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select
+oldconfig.MPC_FIRMWARE_DAY "MPC_FIRMWARE_DAY $OLD_EMU_CONFIG_ID",newconfig.MPC_FIRMWARE_DAY "MPC_FIRMWARE_DAY $NEW_EMU_CONFIG_ID",
+oldconfig.MPC_FIRMWARE_MONTH "MPC_FIRMWARE_MONTH $OLD_EMU_CONFIG_ID",newconfig.MPC_FIRMWARE_MONTH "MPC_FIRMWARE_MONTH $NEW_EMU_CONFIG_ID",
+oldconfig.MPC_FIRMWARE_YEAR "MPC_FIRMWARE_YEAR $OLD_EMU_CONFIG_ID",newconfig.MPC_FIRMWARE_YEAR "MPC_FIRMWARE_YEAR $NEW_EMU_CONFIG_ID",
+oldconfig.SERIALIZERMODE "SERIALIZERMODE $OLD_EMU_CONFIG_ID",newconfig.SERIALIZERMODE "SERIALIZERMODE $NEW_EMU_CONFIG_ID",
+oldconfig.TRANSPARENTMODE "TRANSPARENTMODE $OLD_EMU_CONFIG_ID",newconfig.TRANSPARENTMODE "TRANSPARENTMODE $NEW_EMU_CONFIG_ID"
+from EMU_MPC oldconfig,EMU_MPC newconfig where
+oldconfig.EMU_CONFIG_ID=$OLD_EMU_CONFIG_ID and oldconfig.PERIPH_CONFIG_ID=$OLD_XXX_CONFIG_ID
+and newconfig.EMU_CONFIG_ID=$NEW_EMU_CONFIG_ID and newconfig.PERIPH_CONFIG_ID=$NEW_XXX_CONFIG_ID
+and
+(oldconfig.MPC_FIRMWARE_DAY!=newconfig.MPC_FIRMWARE_DAY or 
+oldconfig.MPC_FIRMWARE_MONTH!=newconfig.MPC_FIRMWARE_MONTH or 
+oldconfig.MPC_FIRMWARE_YEAR!=newconfig.MPC_FIRMWARE_YEAR or 
+oldconfig.SERIALIZERMODE!=newconfig.SERIALIZERMODE or 
+oldconfig.TRANSPARENTMODE!=newconfig.TRANSPARENTMODE)]]>
+    </sql:query>
+
+
+    <!-- TABLE: EMU_VCC -->
+
+    <sql:insert xmlns:sql="urn:tstore-view-SQL" name="vcc">
+      <sql:table name="EMU_VCC"/>
+    </sql:insert>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="vcc" expectedRows="1">
+      <sql:parameter name="EMU_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="XXX_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select * from EMU_VCC where EMU_CONFIG_ID=$EMU_CONFIG_ID and PERIPH_CONFIG_ID=$XXX_CONFIG_ID]]>
+    </sql:query>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="vcc_all" expectedRows="30">
+      <sql:parameter name="ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select * from EMU_VCC where EMU_CONFIG_ID=$ID order by VCC_CONFIG_ID]]>
+    </sql:query>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="vcc_diff" expectedRows="1">
+      <sql:parameter name="OLD_EMU_CONFIG_ID">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="OLD_XXX_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="NEW_EMU_CONFIG_ID">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="NEW_XXX_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select
+oldconfig.BGTO "BGTO $OLD_EMU_CONFIG_ID",newconfig.BGTO "BGTO $NEW_EMU_CONFIG_ID",
+oldconfig.BTO "BTO $OLD_EMU_CONFIG_ID",newconfig.BTO "BTO $NEW_EMU_CONFIG_ID",
+oldconfig.DFLT_SRV_MAC "DFLT_SRV_MAC $OLD_EMU_CONFIG_ID",newconfig.DFLT_SRV_MAC "DFLT_SRV_MAC $NEW_EMU_CONFIG_ID",
+oldconfig.ETHERNET_CR "ETHERNET_CR $OLD_EMU_CONFIG_ID",newconfig.ETHERNET_CR "ETHERNET_CR $NEW_EMU_CONFIG_ID",
+oldconfig.ETH_PORT "ETH_PORT $OLD_EMU_CONFIG_ID",newconfig.ETH_PORT "ETH_PORT $NEW_EMU_CONFIG_ID",
+oldconfig.EXT_FIFO_CR "EXT_FIFO_CR $OLD_EMU_CONFIG_ID",newconfig.EXT_FIFO_CR "EXT_FIFO_CR $NEW_EMU_CONFIG_ID",
+oldconfig.MAC_ADDR "MAC_ADDR $OLD_EMU_CONFIG_ID",newconfig.MAC_ADDR "MAC_ADDR $NEW_EMU_CONFIG_ID",
+oldconfig.MCAST_1 "MCAST_1 $OLD_EMU_CONFIG_ID",newconfig.MCAST_1 "MCAST_1 $NEW_EMU_CONFIG_ID",
+oldconfig.MCAST_2 "MCAST_2 $OLD_EMU_CONFIG_ID",newconfig.MCAST_2 "MCAST_2 $NEW_EMU_CONFIG_ID",
+oldconfig.MCAST_3 "MCAST_3 $OLD_EMU_CONFIG_ID",newconfig.MCAST_3 "MCAST_3 $NEW_EMU_CONFIG_ID",
+oldconfig.MSG_LVL "MSG_LVL $OLD_EMU_CONFIG_ID",newconfig.MSG_LVL "MSG_LVL $NEW_EMU_CONFIG_ID",
+oldconfig.PKT_ON_STARTUP "PKT_ON_STARTUP $OLD_EMU_CONFIG_ID",newconfig.PKT_ON_STARTUP "PKT_ON_STARTUP $NEW_EMU_CONFIG_ID",
+oldconfig.RST_MISC_CR "RST_MISC_CR $OLD_EMU_CONFIG_ID",newconfig.RST_MISC_CR "RST_MISC_CR $NEW_EMU_CONFIG_ID",
+oldconfig.VCC_FRMW_VER "VCC_FRMW_VER $OLD_EMU_CONFIG_ID",newconfig.VCC_FRMW_VER "VCC_FRMW_VER $NEW_EMU_CONFIG_ID",
+oldconfig.VME_CR "VME_CR $OLD_EMU_CONFIG_ID",newconfig.VME_CR "VME_CR $NEW_EMU_CONFIG_ID",
+oldconfig.WARN_ON_SHTDWN "WARN_ON_SHTDWN $OLD_EMU_CONFIG_ID",newconfig.WARN_ON_SHTDWN "WARN_ON_SHTDWN $NEW_EMU_CONFIG_ID"
+from EMU_VCC oldconfig,EMU_VCC newconfig where
+oldconfig.EMU_CONFIG_ID=$OLD_EMU_CONFIG_ID and oldconfig.PERIPH_CONFIG_ID=$OLD_XXX_CONFIG_ID
+and newconfig.EMU_CONFIG_ID=$NEW_EMU_CONFIG_ID and newconfig.PERIPH_CONFIG_ID=$NEW_XXX_CONFIG_ID
+and (oldconfig.BGTO!=newconfig.BGTO or
+oldconfig.BTO!=newconfig.BTO or
+oldconfig.DFLT_SRV_MAC!=newconfig.DFLT_SRV_MAC or
+oldconfig.ETHERNET_CR!=newconfig.ETHERNET_CR or
+oldconfig.ETH_PORT!=newconfig.ETH_PORT or
+oldconfig.EXT_FIFO_CR!=newconfig.EXT_FIFO_CR or
+oldconfig.MAC_ADDR!=newconfig.MAC_ADDR or
+oldconfig.MCAST_1!=newconfig.MCAST_1 or
+oldconfig.MCAST_2!=newconfig.MCAST_2 or
+oldconfig.MCAST_3!=newconfig.MCAST_3 or
+oldconfig.MSG_LVL!=newconfig.MSG_LVL or
+oldconfig.PKT_ON_STARTUP!=newconfig.PKT_ON_STARTUP or
+oldconfig.RST_MISC_CR!=newconfig.RST_MISC_CR or
+oldconfig.VCC_FRMW_VER!=newconfig.VCC_FRMW_VER or
+oldconfig.VME_CR!=newconfig.VME_CR or
+oldconfig.WARN_ON_SHTDWN!=newconfig.WARN_ON_SHTDWN)]]>
+    </sql:query>
+
+
+    <!-- TABLE: EMU_CSC -->
+
+    <sql:insert xmlns:sql="urn:tstore-view-SQL" name="csc">
+      <sql:table name="EMU_CSC"/>
+    </sql:insert>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="csc" expectedRows="9">
+      <sql:parameter name="EMU_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="XXX_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select * from EMU_CSC where EMU_CONFIG_ID=$EMU_CONFIG_ID and PERIPH_CONFIG_ID=$XXX_CONFIG_ID]]>
+    </sql:query>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="csc_all" expectedRows="270">
+      <sql:parameter name="ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select * from EMU_CSC where EMU_CONFIG_ID=$ID order by CSC_CONFIG_ID]]>
+    </sql:query>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="csc_diff" expectedRows="9">
+      <sql:parameter name="OLD_EMU_CONFIG_ID">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="OLD_XXX_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="NEW_EMU_CONFIG_ID">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="NEW_XXX_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select
+oldconfig.KNOWN_PROBLEM "KNOWN_PROBLEM $OLD_EMU_CONFIG_ID",newconfig.KNOWN_PROBLEM "KNOWN_PROBLEM $NEW_EMU_CONFIG_ID",
+oldconfig.CSC_CONFIG_ID "CSC_CONFIG_ID $OLD_EMU_CONFIG_ID",newconfig.CSC_CONFIG_ID "CSC_CONFIG_ID $NEW_EMU_CONFIG_ID",
+oldconfig.PROBLEM_MASK "PROBLEM_MASK $OLD_EMU_CONFIG_ID",newconfig.PROBLEM_MASK "PROBLEM_MASK $NEW_EMU_CONFIG_ID",
+oldconfig.label
+from EMU_CSC oldconfig,EMU_CSC newconfig where
+oldconfig.EMU_CONFIG_ID=$OLD_EMU_CONFIG_ID and oldconfig.PERIPH_CONFIG_ID=$OLD_XXX_CONFIG_ID
+and newconfig.EMU_CONFIG_ID=$NEW_EMU_CONFIG_ID and newconfig.PERIPH_CONFIG_ID=$NEW_XXX_CONFIG_ID
+and newconfig.label=oldconfig.label]]>
+    </sql:query>
+
+
+    <!-- TABLE: EMU_DAQMB -->
+    <sql:insert xmlns:sql="urn:tstore-view-SQL" name="daqmb">
+      <sql:table name="EMU_DAQMB"/>
+    </sql:insert>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="daqmb" expectedRows="1">
+      <sql:parameter name="EMU_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="XXX_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select * from EMU_DAQMB where EMU_CONFIG_ID=$EMU_CONFIG_ID and CSC_CONFIG_ID=$XXX_CONFIG_ID]]>
+    </sql:query>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="daqmb_all" expectedRows="270">
+      <sql:parameter name="ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select * from EMU_DAQMB where EMU_CONFIG_ID=$ID order by DAQMB_CONFIG_ID]]>
+    </sql:query>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="daqmb_diff" expectedRows="1">
+      <sql:parameter name="OLD_EMU_CONFIG_ID">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="OLD_XXX_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="NEW_EMU_CONFIG_ID">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="NEW_XXX_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select
+      oldconfig.DAQMB_CONFIG_ID "DAQMB_CONFIG_ID $OLD_EMU_CONFIG_ID",newconfig.DAQMB_CONFIG_ID "DAQMB_CONFIG_ID $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_DAV_CABLE_DELAY "ALCT_DAV_CABLE_DELAY $OLD_EMU_CONFIG_ID",newconfig.ALCT_DAV_CABLE_DELAY "ALCT_DAV_CABLE_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.CALIBRATION_L1ACC_DELAY "CALIBRATION_L1ACC_DE $OLD_EMU_CONFIG_ID",newconfig.CALIBRATION_L1ACC_DELAY "CALIBRATION_L1ACC_DE $NEW_EMU_CONFIG_ID",
+oldconfig.CALIBRATION_LCT_DELAY "CALIBRATION_LCT_DELA $OLD_EMU_CONFIG_ID",newconfig.CALIBRATION_LCT_DELAY "CALIBRATION_LCT_DELA $NEW_EMU_CONFIG_ID",
+oldconfig.CFEB_CABLE_DELAY "CFEB_CABLE_DELAY $OLD_EMU_CONFIG_ID",newconfig.CFEB_CABLE_DELAY "CFEB_CABLE_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.CFEB_DAV_CABLE_DELAY "CFEB_DAV_CABLE_DELAY $OLD_EMU_CONFIG_ID",newconfig.CFEB_DAV_CABLE_DELAY "CFEB_DAV_CABLE_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.COMP_MODE "COMP_MODE $OLD_EMU_CONFIG_ID",newconfig.COMP_MODE "COMP_MODE $NEW_EMU_CONFIG_ID",
+oldconfig.COMP_TIMING "COMP_TIMING $OLD_EMU_CONFIG_ID",newconfig.COMP_TIMING "COMP_TIMING $NEW_EMU_CONFIG_ID",
+oldconfig.DMB_CNTL_FIRMWARE_TAG "DMB_CNTL_FIRMWARE_TA $OLD_EMU_CONFIG_ID",newconfig.DMB_CNTL_FIRMWARE_TAG "DMB_CNTL_FIRMWARE_TA $NEW_EMU_CONFIG_ID",
+oldconfig.DMB_VME_FIRMWARE_TAG "DMB_VME_FIRMWARE_TAG $OLD_EMU_CONFIG_ID",newconfig.DMB_VME_FIRMWARE_TAG "DMB_VME_FIRMWARE_TAG $NEW_EMU_CONFIG_ID",
+oldconfig.FEB_CLOCK_DELAY "FEB_CLOCK_DELAY $OLD_EMU_CONFIG_ID",newconfig.FEB_CLOCK_DELAY "FEB_CLOCK_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.INJECT_DELAY "INJECT_DELAY $OLD_EMU_CONFIG_ID",newconfig.INJECT_DELAY "INJECT_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.INJ_DAC_SET "INJ_DAC_SET $OLD_EMU_CONFIG_ID",newconfig.INJ_DAC_SET "INJ_DAC_SET $NEW_EMU_CONFIG_ID",
+oldconfig.KILL_INPUT "KILL_INPUT $OLD_EMU_CONFIG_ID",newconfig.KILL_INPUT "KILL_INPUT $NEW_EMU_CONFIG_ID",
+oldconfig.PRE_BLOCK_END "PRE_BLOCK_END $OLD_EMU_CONFIG_ID",newconfig.PRE_BLOCK_END "PRE_BLOCK_END $NEW_EMU_CONFIG_ID",
+oldconfig.PULSE_DELAY "PULSE_DELAY $OLD_EMU_CONFIG_ID",newconfig.PULSE_DELAY "PULSE_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.PUL_DAC_SET "PUL_DAC_SET $OLD_EMU_CONFIG_ID",newconfig.PUL_DAC_SET "PUL_DAC_SET $NEW_EMU_CONFIG_ID",
+oldconfig.SET_COMP_THRESH "SET_COMP_THRESH $OLD_EMU_CONFIG_ID",newconfig.SET_COMP_THRESH "SET_COMP_THRESH $NEW_EMU_CONFIG_ID",
+oldconfig.SLOT "SLOT $OLD_EMU_CONFIG_ID",newconfig.SLOT "SLOT $NEW_EMU_CONFIG_ID",
+oldconfig.TMB_LCT_CABLE_DELAY "TMB_LCT_CABLE_DELAY $OLD_EMU_CONFIG_ID",newconfig.TMB_LCT_CABLE_DELAY "TMB_LCT_CABLE_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.XFINELATENCY "XFINELATENCY $OLD_EMU_CONFIG_ID",newconfig.XFINELATENCY "XFINELATENCY $NEW_EMU_CONFIG_ID",
+oldconfig.XLATENCY "XLATENCY $OLD_EMU_CONFIG_ID",newconfig.XLATENCY "XLATENCY $NEW_EMU_CONFIG_ID",
+oldconfig.POWER_MASK "POWER_MASK $OLD_EMU_CONFIG_ID",newconfig.POWER_MASK "POWER_MASK $NEW_EMU_CONFIG_ID"
+from EMU_DAQMB oldconfig,EMU_DAQMB newconfig
+where oldconfig.EMU_CONFIG_ID=$OLD_EMU_CONFIG_ID and oldconfig.CSC_CONFIG_ID=$OLD_XXX_CONFIG_ID
+and   newconfig.EMU_CONFIG_ID=$NEW_EMU_CONFIG_ID and newconfig.CSC_CONFIG_ID=$NEW_XXX_CONFIG_ID
+and (oldconfig.ALCT_DAV_CABLE_DELAY!=newconfig.ALCT_DAV_CABLE_DELAY or 
+oldconfig.CALIBRATION_L1ACC_DELAY!=newconfig.CALIBRATION_L1ACC_DELAY or 
+oldconfig.CALIBRATION_LCT_DELAY!=newconfig.CALIBRATION_LCT_DELAY or 
+oldconfig.CFEB_CABLE_DELAY!=newconfig.CFEB_CABLE_DELAY or 
+oldconfig.CFEB_DAV_CABLE_DELAY!=newconfig.CFEB_DAV_CABLE_DELAY or 
+oldconfig.COMP_MODE!=newconfig.COMP_MODE or 
+oldconfig.COMP_TIMING!=newconfig.COMP_TIMING or 
+oldconfig.DMB_CNTL_FIRMWARE_TAG!=newconfig.DMB_CNTL_FIRMWARE_TAG or 
+oldconfig.DMB_VME_FIRMWARE_TAG!=newconfig.DMB_VME_FIRMWARE_TAG or 
+oldconfig.FEB_CLOCK_DELAY!=newconfig.FEB_CLOCK_DELAY or 
+oldconfig.INJECT_DELAY!=newconfig.INJECT_DELAY or 
+oldconfig.INJ_DAC_SET!=newconfig.INJ_DAC_SET or 
+oldconfig.KILL_INPUT!=newconfig.KILL_INPUT or 
+oldconfig.PRE_BLOCK_END!=newconfig.PRE_BLOCK_END or 
+oldconfig.PULSE_DELAY!=newconfig.PULSE_DELAY or 
+oldconfig.PUL_DAC_SET!=newconfig.PUL_DAC_SET or 
+oldconfig.SET_COMP_THRESH!=newconfig.SET_COMP_THRESH or 
+oldconfig.SLOT!=newconfig.SLOT or 
+oldconfig.TMB_LCT_CABLE_DELAY!=newconfig.TMB_LCT_CABLE_DELAY or 
+oldconfig.XFINELATENCY!=newconfig.XFINELATENCY or 
+oldconfig.XLATENCY!=newconfig.XLATENCY or 
+oldconfig.POWER_MASK!=newconfig.POWER_MASK
+or exists (
+  select * from emu_cfeb oldcfeb,emu_cfeb newcfeb
+  where oldcfeb.EMU_CONFIG_ID=$OLD_EMU_CONFIG_ID and oldcfeb.daqmb_CONFIG_ID=oldconfig.daqmb_config_id
+  and   newcfeb.EMU_CONFIG_ID=$NEW_EMU_CONFIG_ID and newcfeb.daqmb_CONFIG_ID=newconfig.daqmb_config_id
+  and oldcfeb.cfeb_number=newcfeb.cfeb_number
+  and (
+    oldcfeb.CFEB_FIRMWARE_TAG!=newcfeb.CFEB_FIRMWARE_TAG or
+    oldcfeb.KILL_CHIP0!=newcfeb.KILL_CHIP0 or 
+    oldcfeb.KILL_CHIP1!=newcfeb.KILL_CHIP1 or 
+    oldcfeb.KILL_CHIP2!=newcfeb.KILL_CHIP2 or 
+    oldcfeb.KILL_CHIP3!=newcfeb.KILL_CHIP3 or 
+    oldcfeb.KILL_CHIP4!=newcfeb.KILL_CHIP4 or 
+    oldcfeb.KILL_CHIP5!=newcfeb.KILL_CHIP5
+  )
+)
+
+)]]>
+    </sql:query>
+
+
+    <!-- TABLE: EMU_CFEB -->
+
+    <sql:insert xmlns:sql="urn:tstore-view-SQL" name="cfeb">
+      <sql:table name="EMU_CFEB"/>
+    </sql:insert>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="cfeb" expectedRows="5">
+      <sql:parameter name="EMU_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="XXX_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select * from EMU_CFEB where EMU_CONFIG_ID=$EMU_CONFIG_ID and DAQMB_CONFIG_ID=$XXX_CONFIG_ID]]>
+    </sql:query>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="cfeb_all" expectedRows="1350">
+      <sql:parameter name="ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select * from EMU_CFEB where EMU_CONFIG_ID=$ID order by CFEB_CONFIG_ID]]>
+    </sql:query>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="cfeb_diff" expectedRows="5">
+      <sql:parameter name="OLD_EMU_CONFIG_ID">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="OLD_XXX_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="NEW_EMU_CONFIG_ID">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="NEW_XXX_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select
+oldconfig.CFEB_FIRMWARE_TAG "CFEB_FIRMWARE_TAG $OLD_EMU_CONFIG_ID",newconfig.CFEB_FIRMWARE_TAG "CFEB_FIRMWARE_TAG $NEW_EMU_CONFIG_ID",
+oldconfig.CFEB_NUMBER,
+oldconfig.KILL_CHIP0 "KILL_CHIP0 $OLD_EMU_CONFIG_ID",newconfig.KILL_CHIP0 "KILL_CHIP0 $NEW_EMU_CONFIG_ID",
+oldconfig.KILL_CHIP1 "KILL_CHIP1 $OLD_EMU_CONFIG_ID",newconfig.KILL_CHIP1 "KILL_CHIP1 $NEW_EMU_CONFIG_ID",
+oldconfig.KILL_CHIP2 "KILL_CHIP2 $OLD_EMU_CONFIG_ID",newconfig.KILL_CHIP2 "KILL_CHIP2 $NEW_EMU_CONFIG_ID",
+oldconfig.KILL_CHIP3 "KILL_CHIP3 $OLD_EMU_CONFIG_ID",newconfig.KILL_CHIP3 "KILL_CHIP3 $NEW_EMU_CONFIG_ID",
+oldconfig.KILL_CHIP4 "KILL_CHIP4 $OLD_EMU_CONFIG_ID",newconfig.KILL_CHIP4 "KILL_CHIP4 $NEW_EMU_CONFIG_ID",
+oldconfig.KILL_CHIP5 "KILL_CHIP5 $OLD_EMU_CONFIG_ID",newconfig.KILL_CHIP5 "KILL_CHIP5 $NEW_EMU_CONFIG_ID"
+from EMU_CFEB oldconfig,EMU_CFEB newconfig
+where oldconfig.EMU_CONFIG_ID=$OLD_EMU_CONFIG_ID and oldconfig.daqmb_CONFIG_ID=$OLD_XXX_CONFIG_ID
+and   newconfig.EMU_CONFIG_ID=$NEW_EMU_CONFIG_ID and newconfig.daqmb_CONFIG_ID=$NEW_XXX_CONFIG_ID
+and oldconfig.cfeb_number=newconfig.cfeb_number
+and (
+oldconfig.CFEB_FIRMWARE_TAG!=newconfig.CFEB_FIRMWARE_TAG or
+oldconfig.KILL_CHIP0!=newconfig.KILL_CHIP0 or 
+oldconfig.KILL_CHIP1!=newconfig.KILL_CHIP1 or 
+oldconfig.KILL_CHIP2!=newconfig.KILL_CHIP2 or 
+oldconfig.KILL_CHIP3!=newconfig.KILL_CHIP3 or 
+oldconfig.KILL_CHIP4!=newconfig.KILL_CHIP4 or 
+oldconfig.KILL_CHIP5!=newconfig.KILL_CHIP5
+)]]>
+    </sql:query>
+
+
+    <!-- TABLE: EMU_TMB -->
+
+    <sql:insert xmlns:sql="urn:tstore-view-SQL" name="tmb">
+      <sql:table name="EMU_TMB"/>
+    </sql:insert>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="tmb" expectedRows="1">
+      <sql:parameter name="EMU_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="XXX_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select * from EMU_TMB where EMU_CONFIG_ID=$EMU_CONFIG_ID and CSC_CONFIG_ID=$XXX_CONFIG_ID]]>
+    </sql:query>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="tmb_all" expectedRows="270">
+      <sql:parameter name="ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select * from EMU_TMB where EMU_CONFIG_ID=$ID order by TMB_CONFIG_ID]]>
+    </sql:query>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="tmb_diff" expectedRows="1">
+      <sql:parameter name="OLD_EMU_CONFIG_ID">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="OLD_XXX_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="NEW_EMU_CONFIG_ID">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="NEW_XXX_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select
+oldconfig.ADJACENT_CFEB_DISTANCE "ADJACENT_CFEB_DISTANCE $OLD_EMU_CONFIG_ID",newconfig.ADJACENT_CFEB_DISTANCE "ADJACENT_CFEB_DISTANCE $NEW_EMU_CONFIG_ID",
+oldconfig.AFF_THRESH "AFF_THRESH $OLD_EMU_CONFIG_ID",newconfig.AFF_THRESH "AFF_THRESH $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_BX0_DELAY "ALCT_BX0_DELAY $OLD_EMU_CONFIG_ID",newconfig.ALCT_BX0_DELAY "ALCT_BX0_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_BX0_ENABLE "ALCT_BX0_ENABLE $OLD_EMU_CONFIG_ID",newconfig.ALCT_BX0_ENABLE "ALCT_BX0_ENABLE $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_CLEAR "ALCT_CLEAR $OLD_EMU_CONFIG_ID",newconfig.ALCT_CLEAR "ALCT_CLEAR $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_CLOCK_EN_USE_CCB "ALCT_CLOCK_EN_USE_CCB $OLD_EMU_CONFIG_ID",newconfig.ALCT_CLOCK_EN_USE_CCB "ALCT_CLOCK_EN_USE_CCB $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_POSNEG "ALCT_POSNEG $OLD_EMU_CONFIG_ID",newconfig.ALCT_POSNEG "ALCT_POSNEG $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_TX_POSNEG "ALCT_TX_POSNEG $OLD_EMU_CONFIG_ID",newconfig.ALCT_TX_POSNEG "ALCT_TX_POSNEG $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_PRETRIG_ENABLE "ALCT_PRETRIG_ENABLE $OLD_EMU_CONFIG_ID",newconfig.ALCT_PRETRIG_ENABLE "ALCT_PRETRIG_ENABLE $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_READOUT_WITHOUT_TRIG "ALCT_READOUT_WITHOUT_T $OLD_EMU_CONFIG_ID",newconfig.ALCT_READOUT_WITHOUT_TRIG "ALCT_READOUT_WITHOUT_T $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_RX_CLOCK_DELAY "ALCT_RX_CLOCK_DELAY $OLD_EMU_CONFIG_ID",newconfig.ALCT_RX_CLOCK_DELAY "ALCT_RX_CLOCK_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_TOF_DELAY "ALCT_TOF_DELAY $OLD_EMU_CONFIG_ID",newconfig.ALCT_TOF_DELAY "ALCT_TOF_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_TRIG_ENABLE "ALCT_TRIG_ENABLE $OLD_EMU_CONFIG_ID",newconfig.ALCT_TRIG_ENABLE "ALCT_TRIG_ENABLE $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_TX_CLOCK_DELAY "ALCT_TX_CLOCK_DELAY $OLD_EMU_CONFIG_ID",newconfig.ALCT_TX_CLOCK_DELAY "ALCT_TX_CLOCK_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.ALL_CFEB_ACTIVE "ALL_CFEB_ACTIVE $OLD_EMU_CONFIG_ID",newconfig.ALL_CFEB_ACTIVE "ALL_CFEB_ACTIVE $NEW_EMU_CONFIG_ID",
+oldconfig.CFEB0DELAY "CFEB0DELAY $OLD_EMU_CONFIG_ID",newconfig.CFEB0DELAY "CFEB0DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.CFEB0POSNEG "CFEB0POSNEG $OLD_EMU_CONFIG_ID",newconfig.CFEB0POSNEG "CFEB0POSNEG $NEW_EMU_CONFIG_ID",
+oldconfig.CFEB0_RXD_INT_DELAY "CFEB0_RXD_INT_DELAY $OLD_EMU_CONFIG_ID",newconfig.CFEB0_RXD_INT_DELAY "CFEB0_RXD_INT_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.CFEB0_TOF_DELAY "CFEB0_TOF_DELAY $OLD_EMU_CONFIG_ID",newconfig.CFEB0_TOF_DELAY "CFEB0_TOF_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.CFEB1DELAY "CFEB1DELAY $OLD_EMU_CONFIG_ID",newconfig.CFEB1DELAY "CFEB1DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.CFEB1POSNEG "CFEB1POSNEG $OLD_EMU_CONFIG_ID",newconfig.CFEB1POSNEG "CFEB1POSNEG $NEW_EMU_CONFIG_ID",
+oldconfig.CFEB1_RXD_INT_DELAY "CFEB1_RXD_INT_DELAY $OLD_EMU_CONFIG_ID",newconfig.CFEB1_RXD_INT_DELAY "CFEB1_RXD_INT_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.CFEB1_TOF_DELAY "CFEB1_TOF_DELAY $OLD_EMU_CONFIG_ID",newconfig.CFEB1_TOF_DELAY "CFEB1_TOF_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.CFEB2DELAY "CFEB2DELAY $OLD_EMU_CONFIG_ID",newconfig.CFEB2DELAY "CFEB2DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.CFEB2POSNEG "CFEB2POSNEG $OLD_EMU_CONFIG_ID",newconfig.CFEB2POSNEG "CFEB2POSNEG $NEW_EMU_CONFIG_ID",
+oldconfig.CFEB2_RXD_INT_DELAY "CFEB2_RXD_INT_DELAY $OLD_EMU_CONFIG_ID",newconfig.CFEB2_RXD_INT_DELAY "CFEB2_RXD_INT_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.CFEB2_TOF_DELAY "CFEB2_TOF_DELAY $OLD_EMU_CONFIG_ID",newconfig.CFEB2_TOF_DELAY "CFEB2_TOF_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.CFEB3DELAY "CFEB3DELAY $OLD_EMU_CONFIG_ID",newconfig.CFEB3DELAY "CFEB3DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.CFEB3POSNEG "CFEB3POSNEG $OLD_EMU_CONFIG_ID",newconfig.CFEB3POSNEG "CFEB3POSNEG $NEW_EMU_CONFIG_ID",
+oldconfig.CFEB3_RXD_INT_DELAY "CFEB3_RXD_INT_DELAY $OLD_EMU_CONFIG_ID",newconfig.CFEB3_RXD_INT_DELAY "CFEB3_RXD_INT_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.CFEB3_TOF_DELAY "CFEB3_TOF_DELAY $OLD_EMU_CONFIG_ID",newconfig.CFEB3_TOF_DELAY "CFEB3_TOF_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.CFEB4DELAY "CFEB4DELAY $OLD_EMU_CONFIG_ID",newconfig.CFEB4DELAY "CFEB4DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.CFEB4POSNEG "CFEB4POSNEG $OLD_EMU_CONFIG_ID",newconfig.CFEB4POSNEG "CFEB4POSNEG $NEW_EMU_CONFIG_ID",
+oldconfig.CFEB4_RXD_INT_DELAY "CFEB4_RXD_INT_DELAY $OLD_EMU_CONFIG_ID",newconfig.CFEB4_RXD_INT_DELAY "CFEB4_RXD_INT_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.CFEB4_TOF_DELAY "CFEB4_TOF_DELAY $OLD_EMU_CONFIG_ID",newconfig.CFEB4_TOF_DELAY "CFEB4_TOF_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.CFEB_BADBITS_BLOCK "CFEB_BADBITS_BLOCK $OLD_EMU_CONFIG_ID",newconfig.CFEB_BADBITS_BLOCK "CFEB_BADBITS_BLOCK $NEW_EMU_CONFIG_ID",
+oldconfig.CFEB_ENABLE_SOURCE "CFEB_ENABLE_SOURCE $OLD_EMU_CONFIG_ID",newconfig.CFEB_ENABLE_SOURCE "CFEB_ENABLE_SOURCE $NEW_EMU_CONFIG_ID",
+oldconfig.CFEB_TOF_DELAY "CFEB_TOF_DELAY $OLD_EMU_CONFIG_ID",newconfig.CFEB_TOF_DELAY "CFEB_TOF_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.CFEB_BADBITS_READOUT "CFEB_BADBITS_READOUT $OLD_EMU_CONFIG_ID",newconfig.CFEB_BADBITS_READOUT "CFEB_BADBITS_READOUT $NEW_EMU_CONFIG_ID",
+oldconfig.L1A_PRIORITY_ENABLE "L1A_PRIORITY_ENABLE $OLD_EMU_CONFIG_ID",newconfig.L1A_PRIORITY_ENABLE "L1A_PRIORITY_ENABLE $NEW_EMU_CONFIG_ID",
+oldconfig.MINISCOPE_ENABLE "MINISCOPE_ENABLE $OLD_EMU_CONFIG_ID",newconfig.MINISCOPE_ENABLE "MINISCOPE_ENABLE $NEW_EMU_CONFIG_ID",
+oldconfig.CLCT_BLANKING "CLCT_BLANKING $OLD_EMU_CONFIG_ID",newconfig.CLCT_BLANKING "CLCT_BLANKING $NEW_EMU_CONFIG_ID",
+oldconfig.CLCT_BX0_DELAY "CLCT_BX0_DELAY $OLD_EMU_CONFIG_ID",newconfig.CLCT_BX0_DELAY "CLCT_BX0_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.CLCT_DRIFT_DELAY "CLCT_DRIFT_DELAY $OLD_EMU_CONFIG_ID",newconfig.CLCT_DRIFT_DELAY "CLCT_DRIFT_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.CLCT_EXT_PRETRIG_ENABLE "CLCT_EXT_PRETRIG_ENABL $OLD_EMU_CONFIG_ID",newconfig.CLCT_EXT_PRETRIG_ENABLE "CLCT_EXT_PRETRIG_ENABL $NEW_EMU_CONFIG_ID",
+oldconfig.CLCT_FIFO_PRETRIG "CLCT_FIFO_PRETRIG $OLD_EMU_CONFIG_ID",newconfig.CLCT_FIFO_PRETRIG "CLCT_FIFO_PRETRIG $NEW_EMU_CONFIG_ID",
+oldconfig.CLCT_FIFO_TBINS "CLCT_FIFO_TBINS $OLD_EMU_CONFIG_ID",newconfig.CLCT_FIFO_TBINS "CLCT_FIFO_TBINS $NEW_EMU_CONFIG_ID",
+oldconfig.CLCT_HIT_PERSIST "CLCT_HIT_PERSIST $OLD_EMU_CONFIG_ID",newconfig.CLCT_HIT_PERSIST "CLCT_HIT_PERSIST $NEW_EMU_CONFIG_ID",
+oldconfig.CLCT_MIN_SEPARATION "CLCT_MIN_SEPARATION $OLD_EMU_CONFIG_ID",newconfig.CLCT_MIN_SEPARATION "CLCT_MIN_SEPARATION $NEW_EMU_CONFIG_ID",
+oldconfig.CLCT_NPLANES_HIT_PATTERN "CLCT_NPLANES_HIT_PATTE $OLD_EMU_CONFIG_ID",newconfig.CLCT_NPLANES_HIT_PATTERN "CLCT_NPLANES_HIT_PATTE $NEW_EMU_CONFIG_ID",
+oldconfig.CLCT_NPLANES_HIT_PRETRIG "CLCT_NPLANES_HIT_PRETR $OLD_EMU_CONFIG_ID",newconfig.CLCT_NPLANES_HIT_PRETRIG "CLCT_NPLANES_HIT_PRETR $NEW_EMU_CONFIG_ID",
+oldconfig.CLCT_PID_THRESH_PRETRIG "CLCT_PID_THRESH_PRETRI $OLD_EMU_CONFIG_ID",newconfig.CLCT_PID_THRESH_PRETRIG "CLCT_PID_THRESH_PRETRI $NEW_EMU_CONFIG_ID",
+oldconfig.CLCT_PRETRIG_ENABLE "CLCT_PRETRIG_ENABLE $OLD_EMU_CONFIG_ID",newconfig.CLCT_PRETRIG_ENABLE "CLCT_PRETRIG_ENABLE $NEW_EMU_CONFIG_ID",
+oldconfig.CLCT_READOUT_WITHOUT_TRIG "CLCT_READOUT_WITHOUT_T $OLD_EMU_CONFIG_ID",newconfig.CLCT_READOUT_WITHOUT_TRIG "CLCT_READOUT_WITHOUT_T $NEW_EMU_CONFIG_ID",
+oldconfig.CLCT_THROTTLE "CLCT_THROTTLE $OLD_EMU_CONFIG_ID",newconfig.CLCT_THROTTLE "CLCT_THROTTLE $NEW_EMU_CONFIG_ID",
+oldconfig.CLCT_TRIG_ENABLE "CLCT_TRIG_ENABLE $OLD_EMU_CONFIG_ID",newconfig.CLCT_TRIG_ENABLE "CLCT_TRIG_ENABLE $NEW_EMU_CONFIG_ID",
+oldconfig.DMB_TX_DELAY "DMB_TX_DELAY $OLD_EMU_CONFIG_ID",newconfig.DMB_TX_DELAY "DMB_TX_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.ENABLECLCTINPUTS_REG42 "ENABLECLCTINPUTS_REG42 $OLD_EMU_CONFIG_ID",newconfig.ENABLECLCTINPUTS_REG42 "ENABLECLCTINPUTS_REG42 $NEW_EMU_CONFIG_ID",
+oldconfig.ENABLECLCTINPUTS_REG68 "ENABLECLCTINPUTS_REG68 $OLD_EMU_CONFIG_ID",newconfig.ENABLECLCTINPUTS_REG68 "ENABLECLCTINPUTS_REG68 $NEW_EMU_CONFIG_ID",
+oldconfig.ENABLE_ALCT_RX "ENABLE_ALCT_RX $OLD_EMU_CONFIG_ID",newconfig.ENABLE_ALCT_RX "ENABLE_ALCT_RX $NEW_EMU_CONFIG_ID",
+oldconfig.ENABLE_ALCT_TX "ENABLE_ALCT_TX $OLD_EMU_CONFIG_ID",newconfig.ENABLE_ALCT_TX "ENABLE_ALCT_TX $NEW_EMU_CONFIG_ID",
+oldconfig.IGNORE_CCB_STARTSTOP "IGNORE_CCB_STARTSTOP $OLD_EMU_CONFIG_ID",newconfig.IGNORE_CCB_STARTSTOP "IGNORE_CCB_STARTSTOP $NEW_EMU_CONFIG_ID",
+oldconfig.L1A_ALLOW_ALCT_ONLY "L1A_ALLOW_ALCT_ONLY $OLD_EMU_CONFIG_ID",newconfig.L1A_ALLOW_ALCT_ONLY "L1A_ALLOW_ALCT_ONLY $NEW_EMU_CONFIG_ID",
+oldconfig.L1A_ALLOW_MATCH "L1A_ALLOW_MATCH $OLD_EMU_CONFIG_ID",newconfig.L1A_ALLOW_MATCH "L1A_ALLOW_MATCH $NEW_EMU_CONFIG_ID",
+oldconfig.L1A_ALLOW_NOL1A "L1A_ALLOW_NOL1A $OLD_EMU_CONFIG_ID",newconfig.L1A_ALLOW_NOL1A "L1A_ALLOW_NOL1A $NEW_EMU_CONFIG_ID",
+oldconfig.L1A_ALLOW_NOTMB "L1A_ALLOW_NOTMB $OLD_EMU_CONFIG_ID",newconfig.L1A_ALLOW_NOTMB "L1A_ALLOW_NOTMB $NEW_EMU_CONFIG_ID",
+oldconfig.LAYER0_DISTRIP_HOT_CHANN_MASK "LAYER0_DISTRIP_HOT_CHA $OLD_EMU_CONFIG_ID",newconfig.LAYER0_DISTRIP_HOT_CHANN_MASK "LAYER0_DISTRIP_HOT_CHA $NEW_EMU_CONFIG_ID",
+oldconfig.LAYER1_DISTRIP_HOT_CHANN_MASK "LAYER1_DISTRIP_HOT_CHA $OLD_EMU_CONFIG_ID",newconfig.LAYER1_DISTRIP_HOT_CHANN_MASK "LAYER1_DISTRIP_HOT_CHA $NEW_EMU_CONFIG_ID",
+oldconfig.LAYER2_DISTRIP_HOT_CHANN_MASK "LAYER2_DISTRIP_HOT_CHA $OLD_EMU_CONFIG_ID",newconfig.LAYER2_DISTRIP_HOT_CHANN_MASK "LAYER2_DISTRIP_HOT_CHA $NEW_EMU_CONFIG_ID",
+oldconfig.LAYER3_DISTRIP_HOT_CHANN_MASK "LAYER3_DISTRIP_HOT_CHA $OLD_EMU_CONFIG_ID",newconfig.LAYER3_DISTRIP_HOT_CHANN_MASK "LAYER3_DISTRIP_HOT_CHA $NEW_EMU_CONFIG_ID",
+oldconfig.LAYER4_DISTRIP_HOT_CHANN_MASK "LAYER4_DISTRIP_HOT_CHA $OLD_EMU_CONFIG_ID",newconfig.LAYER4_DISTRIP_HOT_CHANN_MASK "LAYER4_DISTRIP_HOT_CHA $NEW_EMU_CONFIG_ID",
+oldconfig.LAYER5_DISTRIP_HOT_CHANN_MASK "LAYER5_DISTRIP_HOT_CHA $OLD_EMU_CONFIG_ID",newconfig.LAYER5_DISTRIP_HOT_CHANN_MASK "LAYER5_DISTRIP_HOT_CHA $NEW_EMU_CONFIG_ID",
+oldconfig.LAYER_TRIG_ENABLE "LAYER_TRIG_ENABLE $OLD_EMU_CONFIG_ID",newconfig.LAYER_TRIG_ENABLE "LAYER_TRIG_ENABLE $NEW_EMU_CONFIG_ID",
+oldconfig.LAYER_TRIG_THRESH "LAYER_TRIG_THRESH $OLD_EMU_CONFIG_ID",newconfig.LAYER_TRIG_THRESH "LAYER_TRIG_THRESH $NEW_EMU_CONFIG_ID",
+oldconfig.MATCH_PRETRIG_ALCT_DELAY "MATCH_PRETRIG_ALCT_DEL $OLD_EMU_CONFIG_ID",newconfig.MATCH_PRETRIG_ALCT_DELAY "MATCH_PRETRIG_ALCT_DEL $NEW_EMU_CONFIG_ID",
+oldconfig.MATCH_PRETRIG_ENABLE "MATCH_PRETRIG_ENABLE $OLD_EMU_CONFIG_ID",newconfig.MATCH_PRETRIG_ENABLE "MATCH_PRETRIG_ENABLE $NEW_EMU_CONFIG_ID",
+oldconfig.MATCH_PRETRIG_WINDOW_SIZE "MATCH_PRETRIG_WINDOW_S $OLD_EMU_CONFIG_ID",newconfig.MATCH_PRETRIG_WINDOW_SIZE "MATCH_PRETRIG_WINDOW_S $NEW_EMU_CONFIG_ID",
+oldconfig.MATCH_READOUT_WITHOUT_TRIG "MATCH_READOUT_WITHOUT_ $OLD_EMU_CONFIG_ID",newconfig.MATCH_READOUT_WITHOUT_TRIG "MATCH_READOUT_WITHOUT_ $NEW_EMU_CONFIG_ID",
+oldconfig.MATCH_TRIG_ALCT_DELAY "MATCH_TRIG_ALCT_DELAY $OLD_EMU_CONFIG_ID",newconfig.MATCH_TRIG_ALCT_DELAY "MATCH_TRIG_ALCT_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.MATCH_TRIG_ENABLE "MATCH_TRIG_ENABLE $OLD_EMU_CONFIG_ID",newconfig.MATCH_TRIG_ENABLE "MATCH_TRIG_ENABLE $NEW_EMU_CONFIG_ID",
+oldconfig.MATCH_TRIG_WINDOW_SIZE "MATCH_TRIG_WINDOW_SIZE $OLD_EMU_CONFIG_ID",newconfig.MATCH_TRIG_WINDOW_SIZE "MATCH_TRIG_WINDOW_SIZE $NEW_EMU_CONFIG_ID",
+oldconfig.MPC_BLOCK_ME1A "MPC_BLOCK_ME1A $OLD_EMU_CONFIG_ID",newconfig.MPC_BLOCK_ME1A "MPC_BLOCK_ME1A $NEW_EMU_CONFIG_ID",
+oldconfig.MPC_IDLE_BLANK "MPC_IDLE_BLANK $OLD_EMU_CONFIG_ID",newconfig.MPC_IDLE_BLANK "MPC_IDLE_BLANK $NEW_EMU_CONFIG_ID",
+oldconfig.MPC_OUTPUT_ENABLE "MPC_OUTPUT_ENABLE $OLD_EMU_CONFIG_ID",newconfig.MPC_OUTPUT_ENABLE "MPC_OUTPUT_ENABLE $NEW_EMU_CONFIG_ID",
+oldconfig.MPC_RX_DELAY "MPC_RX_DELAY $OLD_EMU_CONFIG_ID",newconfig.MPC_RX_DELAY "MPC_RX_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.MPC_SEL_TTC_BX0 "MPC_SEL_TTC_BX0 $OLD_EMU_CONFIG_ID",newconfig.MPC_SEL_TTC_BX0 "MPC_SEL_TTC_BX0 $NEW_EMU_CONFIG_ID",
+oldconfig.MPC_SYNC_ERR_ENABLE "MPC_SYNC_ERR_ENABLE $OLD_EMU_CONFIG_ID",newconfig.MPC_SYNC_ERR_ENABLE "MPC_SYNC_ERR_ENABLE $NEW_EMU_CONFIG_ID",
+oldconfig.MPC_TX_DELAY "MPC_TX_DELAY $OLD_EMU_CONFIG_ID",newconfig.MPC_TX_DELAY "MPC_TX_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.RAT_FIRMWARE_DAY "RAT_FIRMWARE_DAY $OLD_EMU_CONFIG_ID",newconfig.RAT_FIRMWARE_DAY "RAT_FIRMWARE_DAY $NEW_EMU_CONFIG_ID",
+oldconfig.RAT_FIRMWARE_MONTH "RAT_FIRMWARE_MONTH $OLD_EMU_CONFIG_ID",newconfig.RAT_FIRMWARE_MONTH "RAT_FIRMWARE_MONTH $NEW_EMU_CONFIG_ID",
+oldconfig.RAT_FIRMWARE_YEAR "RAT_FIRMWARE_YEAR $OLD_EMU_CONFIG_ID",newconfig.RAT_FIRMWARE_YEAR "RAT_FIRMWARE_YEAR $NEW_EMU_CONFIG_ID",
+oldconfig.RAT_TMB_DELAY "RAT_TMB_DELAY $OLD_EMU_CONFIG_ID",newconfig.RAT_TMB_DELAY "RAT_TMB_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.REQUEST_L1A "REQUEST_L1A $OLD_EMU_CONFIG_ID",newconfig.REQUEST_L1A "REQUEST_L1A $NEW_EMU_CONFIG_ID",
+oldconfig.RPC0_RAT_DELAY "RPC0_RAT_DELAY $OLD_EMU_CONFIG_ID",newconfig.RPC0_RAT_DELAY "RPC0_RAT_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.RPC0_RAW_DELAY "RPC0_RAW_DELAY $OLD_EMU_CONFIG_ID",newconfig.RPC0_RAW_DELAY "RPC0_RAW_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.RPC1_RAT_DELAY "RPC1_RAT_DELAY $OLD_EMU_CONFIG_ID",newconfig.RPC1_RAT_DELAY "RPC1_RAT_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.RPC1_RAW_DELAY "RPC1_RAW_DELAY $OLD_EMU_CONFIG_ID",newconfig.RPC1_RAW_DELAY "RPC1_RAW_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.RPC_BXN_OFFSET "RPC_BXN_OFFSET $OLD_EMU_CONFIG_ID",newconfig.RPC_BXN_OFFSET "RPC_BXN_OFFSET $NEW_EMU_CONFIG_ID",
+oldconfig.RPC_EXISTS "RPC_EXISTS $OLD_EMU_CONFIG_ID",newconfig.RPC_EXISTS "RPC_EXISTS $NEW_EMU_CONFIG_ID",
+oldconfig.RPC_FIFO_DECOUPLE "RPC_FIFO_DECOUPLE $OLD_EMU_CONFIG_ID",newconfig.RPC_FIFO_DECOUPLE "RPC_FIFO_DECOUPLE $NEW_EMU_CONFIG_ID",
+oldconfig.RPC_FIFO_PRETRIG "RPC_FIFO_PRETRIG $OLD_EMU_CONFIG_ID",newconfig.RPC_FIFO_PRETRIG "RPC_FIFO_PRETRIG $NEW_EMU_CONFIG_ID",
+oldconfig.RPC_FIFO_TBINS "RPC_FIFO_TBINS $OLD_EMU_CONFIG_ID",newconfig.RPC_FIFO_TBINS "RPC_FIFO_TBINS $NEW_EMU_CONFIG_ID",
+oldconfig.RPC_MASK_ALL "RPC_MASK_ALL $OLD_EMU_CONFIG_ID",newconfig.RPC_MASK_ALL "RPC_MASK_ALL $NEW_EMU_CONFIG_ID",
+oldconfig.RPC_READ_ENABLE "RPC_READ_ENABLE $OLD_EMU_CONFIG_ID",newconfig.RPC_READ_ENABLE "RPC_READ_ENABLE $NEW_EMU_CONFIG_ID",
+oldconfig.SLOT "SLOT $OLD_EMU_CONFIG_ID",newconfig.SLOT "SLOT $NEW_EMU_CONFIG_ID",
+oldconfig.TMB_BXN_OFFSET "TMB_BXN_OFFSET $OLD_EMU_CONFIG_ID",newconfig.TMB_BXN_OFFSET "TMB_BXN_OFFSET $NEW_EMU_CONFIG_ID",
+oldconfig.TMB_FIFO_MODE "TMB_FIFO_MODE $OLD_EMU_CONFIG_ID",newconfig.TMB_FIFO_MODE "TMB_FIFO_MODE $NEW_EMU_CONFIG_ID",
+oldconfig.TMB_FIFO_NO_RAW_HITS "TMB_FIFO_NO_RAW_HITS $OLD_EMU_CONFIG_ID",newconfig.TMB_FIFO_NO_RAW_HITS "TMB_FIFO_NO_RAW_HITS $NEW_EMU_CONFIG_ID",
+oldconfig.TMB_FIRMWARE_COMPILE_TYPE "TMB_FIRMWARE_COMPILE_T $OLD_EMU_CONFIG_ID",newconfig.TMB_FIRMWARE_COMPILE_TYPE "TMB_FIRMWARE_COMPILE_T $NEW_EMU_CONFIG_ID",
+oldconfig.TMB_FIRMWARE_DAY "TMB_FIRMWARE_DAY $OLD_EMU_CONFIG_ID",newconfig.TMB_FIRMWARE_DAY "TMB_FIRMWARE_DAY $NEW_EMU_CONFIG_ID",
+oldconfig.TMB_FIRMWARE_MONTH "TMB_FIRMWARE_MONTH $OLD_EMU_CONFIG_ID",newconfig.TMB_FIRMWARE_MONTH "TMB_FIRMWARE_MONTH $NEW_EMU_CONFIG_ID",
+oldconfig.TMB_FIRMWARE_REVCODE "TMB_FIRMWARE_REVCODE $OLD_EMU_CONFIG_ID",newconfig.TMB_FIRMWARE_REVCODE "TMB_FIRMWARE_REVCODE $NEW_EMU_CONFIG_ID",
+oldconfig.TMB_FIRMWARE_TYPE "TMB_FIRMWARE_TYPE $OLD_EMU_CONFIG_ID",newconfig.TMB_FIRMWARE_TYPE "TMB_FIRMWARE_TYPE $NEW_EMU_CONFIG_ID",
+oldconfig.TMB_FIRMWARE_VERSION "TMB_FIRMWARE_VERSION $OLD_EMU_CONFIG_ID",newconfig.TMB_FIRMWARE_VERSION "TMB_FIRMWARE_VERSION $NEW_EMU_CONFIG_ID",
+oldconfig.TMB_FIRMWARE_YEAR "TMB_FIRMWARE_YEAR $OLD_EMU_CONFIG_ID",newconfig.TMB_FIRMWARE_YEAR "TMB_FIRMWARE_YEAR $NEW_EMU_CONFIG_ID",
+oldconfig.TMB_L1A_DELAY "TMB_L1A_DELAY $OLD_EMU_CONFIG_ID",newconfig.TMB_L1A_DELAY "TMB_L1A_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.TMB_L1A_OFFSET "TMB_L1A_OFFSET $OLD_EMU_CONFIG_ID",newconfig.TMB_L1A_OFFSET "TMB_L1A_OFFSET $NEW_EMU_CONFIG_ID",
+oldconfig.TMB_L1A_WINDOW_SIZE "TMB_L1A_WINDOW_SIZE $OLD_EMU_CONFIG_ID",newconfig.TMB_L1A_WINDOW_SIZE "TMB_L1A_WINDOW_SIZE $NEW_EMU_CONFIG_ID",
+oldconfig.TMB_TO_ALCT_DATA_DELAY "TMB_TO_ALCT_DATA_DELAY $OLD_EMU_CONFIG_ID",newconfig.TMB_TO_ALCT_DATA_DELAY "TMB_TO_ALCT_DATA_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.VALID_CLCT_REQUIRED "VALID_CLCT_REQUIRED $OLD_EMU_CONFIG_ID",newconfig.VALID_CLCT_REQUIRED "VALID_CLCT_REQUIRED $NEW_EMU_CONFIG_ID",
+oldconfig.WRITE_BUFFER_AUTOCLEAR "WRITE_BUFFER_AUTOCLEAR $OLD_EMU_CONFIG_ID",newconfig.WRITE_BUFFER_AUTOCLEAR "WRITE_BUFFER_AUTOCLEAR $NEW_EMU_CONFIG_ID",
+oldconfig.WRITE_BUFFER_CONTINOUS_ENABLE "WRITE_BUFFER_CONTINOUS $OLD_EMU_CONFIG_ID",newconfig.WRITE_BUFFER_CONTINOUS_ENABLE "WRITE_BUFFER_CONTINOUS $NEW_EMU_CONFIG_ID",
+oldconfig.WRITE_BUFFER_REQUIRED "WRITE_BUFFER_REQUIRED $OLD_EMU_CONFIG_ID",newconfig.WRITE_BUFFER_REQUIRED "WRITE_BUFFER_REQUIRED $NEW_EMU_CONFIG_ID",
+oldconfig.TMB_CONFIG_ID "TMB_CONFIG_ID $OLD_EMU_CONFIG_ID",newconfig.TMB_CONFIG_ID "TMB_CONFIG_ID $NEW_EMU_CONFIG_ID"
+from EMU_TMB oldconfig,EMU_TMB newconfig,emu_alct oldalct,emu_alct newalct
+where oldconfig.EMU_CONFIG_ID=$OLD_EMU_CONFIG_ID and oldconfig.csc_CONFIG_ID=$OLD_XXX_CONFIG_ID
+and   newconfig.EMU_CONFIG_ID=$NEW_EMU_CONFIG_ID and newconfig.csc_CONFIG_ID=$NEW_XXX_CONFIG_ID
+and oldalct.tmb_config_id=oldconfig.tmb_config_id
+and newalct.tmb_config_id=newconfig.tmb_config_id
+and (oldconfig.ADJACENT_CFEB_DISTANCE!=newconfig.ADJACENT_CFEB_DISTANCE or 
+oldconfig.AFF_THRESH!=newconfig.AFF_THRESH or 
+oldconfig.ALCT_BX0_DELAY!=newconfig.ALCT_BX0_DELAY or 
+oldconfig.ALCT_BX0_ENABLE!=newconfig.ALCT_BX0_ENABLE or 
+oldconfig.ALCT_CLEAR!=newconfig.ALCT_CLEAR or 
+oldconfig.ALCT_CLOCK_EN_USE_CCB!=newconfig.ALCT_CLOCK_EN_USE_CCB or 
+oldconfig.ALCT_POSNEG!=newconfig.ALCT_POSNEG or 
+oldconfig.ALCT_TX_POSNEG!=newconfig.ALCT_TX_POSNEG or 
+oldconfig.ALCT_PRETRIG_ENABLE!=newconfig.ALCT_PRETRIG_ENABLE or 
+oldconfig.ALCT_READOUT_WITHOUT_TRIG!=newconfig.ALCT_READOUT_WITHOUT_TRIG or 
+oldconfig.ALCT_RX_CLOCK_DELAY!=newconfig.ALCT_RX_CLOCK_DELAY or 
+oldconfig.ALCT_TOF_DELAY!=newconfig.ALCT_TOF_DELAY or 
+oldconfig.ALCT_TRIG_ENABLE!=newconfig.ALCT_TRIG_ENABLE or 
+oldconfig.ALCT_TX_CLOCK_DELAY!=newconfig.ALCT_TX_CLOCK_DELAY or 
+oldconfig.ALL_CFEB_ACTIVE!=newconfig.ALL_CFEB_ACTIVE or 
+oldconfig.CFEB0DELAY!=newconfig.CFEB0DELAY or 
+oldconfig.CFEB0POSNEG!=newconfig.CFEB0POSNEG or 
+oldconfig.CFEB0_RXD_INT_DELAY!=newconfig.CFEB0_RXD_INT_DELAY or 
+oldconfig.CFEB0_TOF_DELAY!=newconfig.CFEB0_TOF_DELAY or 
+oldconfig.CFEB1DELAY!=newconfig.CFEB1DELAY or 
+oldconfig.CFEB1POSNEG!=newconfig.CFEB1POSNEG or 
+oldconfig.CFEB1_RXD_INT_DELAY!=newconfig.CFEB1_RXD_INT_DELAY or 
+oldconfig.CFEB1_TOF_DELAY!=newconfig.CFEB1_TOF_DELAY or 
+oldconfig.CFEB2DELAY!=newconfig.CFEB2DELAY or 
+oldconfig.CFEB2POSNEG!=newconfig.CFEB2POSNEG or 
+oldconfig.CFEB2_RXD_INT_DELAY!=newconfig.CFEB2_RXD_INT_DELAY or 
+oldconfig.CFEB2_TOF_DELAY!=newconfig.CFEB2_TOF_DELAY or 
+oldconfig.CFEB3DELAY!=newconfig.CFEB3DELAY or 
+oldconfig.CFEB3POSNEG!=newconfig.CFEB3POSNEG or 
+oldconfig.CFEB3_RXD_INT_DELAY!=newconfig.CFEB3_RXD_INT_DELAY or 
+oldconfig.CFEB3_TOF_DELAY!=newconfig.CFEB3_TOF_DELAY or 
+oldconfig.CFEB4DELAY!=newconfig.CFEB4DELAY or 
+oldconfig.CFEB4POSNEG!=newconfig.CFEB4POSNEG or 
+oldconfig.CFEB4_RXD_INT_DELAY!=newconfig.CFEB4_RXD_INT_DELAY or 
+oldconfig.CFEB4_TOF_DELAY!=newconfig.CFEB4_TOF_DELAY or 
+oldconfig.CFEB_BADBITS_BLOCK!=newconfig.CFEB_BADBITS_BLOCK or 
+oldconfig.CFEB_ENABLE_SOURCE!=newconfig.CFEB_ENABLE_SOURCE or 
+oldconfig.CFEB_TOF_DELAY!=newconfig.CFEB_TOF_DELAY or 
+oldconfig.CFEB_BADBITS_READOUT!=newconfig.CFEB_BADBITS_READOUT or 
+oldconfig.L1A_PRIORITY_ENABLE!=newconfig.L1A_PRIORITY_ENABLE or 
+oldconfig.MINISCOPE_ENABLE!=newconfig.MINISCOPE_ENABLE or 
+oldconfig.CLCT_BLANKING!=newconfig.CLCT_BLANKING or 
+oldconfig.CLCT_BX0_DELAY!=newconfig.CLCT_BX0_DELAY or 
+oldconfig.CLCT_DRIFT_DELAY!=newconfig.CLCT_DRIFT_DELAY or 
+oldconfig.CLCT_EXT_PRETRIG_ENABLE!=newconfig.CLCT_EXT_PRETRIG_ENABLE or 
+oldconfig.CLCT_FIFO_PRETRIG!=newconfig.CLCT_FIFO_PRETRIG or 
+oldconfig.CLCT_FIFO_TBINS!=newconfig.CLCT_FIFO_TBINS or 
+oldconfig.CLCT_HIT_PERSIST!=newconfig.CLCT_HIT_PERSIST or 
+oldconfig.CLCT_MIN_SEPARATION!=newconfig.CLCT_MIN_SEPARATION or 
+oldconfig.CLCT_NPLANES_HIT_PATTERN!=newconfig.CLCT_NPLANES_HIT_PATTERN or 
+oldconfig.CLCT_NPLANES_HIT_PRETRIG!=newconfig.CLCT_NPLANES_HIT_PRETRIG or 
+oldconfig.CLCT_PID_THRESH_PRETRIG!=newconfig.CLCT_PID_THRESH_PRETRIG or 
+oldconfig.CLCT_PRETRIG_ENABLE!=newconfig.CLCT_PRETRIG_ENABLE or 
+oldconfig.CLCT_READOUT_WITHOUT_TRIG!=newconfig.CLCT_READOUT_WITHOUT_TRIG or 
+oldconfig.CLCT_THROTTLE!=newconfig.CLCT_THROTTLE or 
+oldconfig.CLCT_TRIG_ENABLE!=newconfig.CLCT_TRIG_ENABLE or 
+oldconfig.DMB_TX_DELAY!=newconfig.DMB_TX_DELAY or 
+oldconfig.ENABLECLCTINPUTS_REG42!=newconfig.ENABLECLCTINPUTS_REG42 or 
+oldconfig.ENABLECLCTINPUTS_REG68!=newconfig.ENABLECLCTINPUTS_REG68 or 
+oldconfig.ENABLE_ALCT_RX!=newconfig.ENABLE_ALCT_RX or 
+oldconfig.ENABLE_ALCT_TX!=newconfig.ENABLE_ALCT_TX or 
+oldconfig.IGNORE_CCB_STARTSTOP!=newconfig.IGNORE_CCB_STARTSTOP or 
+oldconfig.L1A_ALLOW_ALCT_ONLY!=newconfig.L1A_ALLOW_ALCT_ONLY or 
+oldconfig.L1A_ALLOW_MATCH!=newconfig.L1A_ALLOW_MATCH or 
+oldconfig.L1A_ALLOW_NOL1A!=newconfig.L1A_ALLOW_NOL1A or 
+oldconfig.L1A_ALLOW_NOTMB!=newconfig.L1A_ALLOW_NOTMB or 
+oldconfig.LAYER0_DISTRIP_HOT_CHANN_MASK!=newconfig.LAYER0_DISTRIP_HOT_CHANN_MASK or 
+oldconfig.LAYER1_DISTRIP_HOT_CHANN_MASK!=newconfig.LAYER1_DISTRIP_HOT_CHANN_MASK or 
+oldconfig.LAYER2_DISTRIP_HOT_CHANN_MASK!=newconfig.LAYER2_DISTRIP_HOT_CHANN_MASK or 
+oldconfig.LAYER3_DISTRIP_HOT_CHANN_MASK!=newconfig.LAYER3_DISTRIP_HOT_CHANN_MASK or 
+oldconfig.LAYER4_DISTRIP_HOT_CHANN_MASK!=newconfig.LAYER4_DISTRIP_HOT_CHANN_MASK or 
+oldconfig.LAYER5_DISTRIP_HOT_CHANN_MASK!=newconfig.LAYER5_DISTRIP_HOT_CHANN_MASK or 
+oldconfig.LAYER_TRIG_ENABLE!=newconfig.LAYER_TRIG_ENABLE or 
+oldconfig.LAYER_TRIG_THRESH!=newconfig.LAYER_TRIG_THRESH or 
+oldconfig.MATCH_PRETRIG_ALCT_DELAY!=newconfig.MATCH_PRETRIG_ALCT_DELAY or 
+oldconfig.MATCH_PRETRIG_ENABLE!=newconfig.MATCH_PRETRIG_ENABLE or 
+oldconfig.MATCH_PRETRIG_WINDOW_SIZE!=newconfig.MATCH_PRETRIG_WINDOW_SIZE or 
+oldconfig.MATCH_READOUT_WITHOUT_TRIG!=newconfig.MATCH_READOUT_WITHOUT_TRIG or 
+oldconfig.MATCH_TRIG_ALCT_DELAY!=newconfig.MATCH_TRIG_ALCT_DELAY or 
+oldconfig.MATCH_TRIG_ENABLE!=newconfig.MATCH_TRIG_ENABLE or 
+oldconfig.MATCH_TRIG_WINDOW_SIZE!=newconfig.MATCH_TRIG_WINDOW_SIZE or 
+oldconfig.MPC_BLOCK_ME1A!=newconfig.MPC_BLOCK_ME1A or 
+oldconfig.MPC_IDLE_BLANK!=newconfig.MPC_IDLE_BLANK or 
+oldconfig.MPC_OUTPUT_ENABLE!=newconfig.MPC_OUTPUT_ENABLE or 
+oldconfig.MPC_RX_DELAY!=newconfig.MPC_RX_DELAY or 
+oldconfig.MPC_SEL_TTC_BX0!=newconfig.MPC_SEL_TTC_BX0 or 
+oldconfig.MPC_SYNC_ERR_ENABLE!=newconfig.MPC_SYNC_ERR_ENABLE or 
+oldconfig.MPC_TX_DELAY!=newconfig.MPC_TX_DELAY or 
+oldconfig.RAT_FIRMWARE_DAY!=newconfig.RAT_FIRMWARE_DAY or 
+oldconfig.RAT_FIRMWARE_MONTH!=newconfig.RAT_FIRMWARE_MONTH or 
+oldconfig.RAT_FIRMWARE_YEAR!=newconfig.RAT_FIRMWARE_YEAR or 
+oldconfig.RAT_TMB_DELAY!=newconfig.RAT_TMB_DELAY or 
+oldconfig.REQUEST_L1A!=newconfig.REQUEST_L1A or 
+oldconfig.RPC0_RAT_DELAY!=newconfig.RPC0_RAT_DELAY or 
+oldconfig.RPC0_RAW_DELAY!=newconfig.RPC0_RAW_DELAY or 
+oldconfig.RPC1_RAT_DELAY!=newconfig.RPC1_RAT_DELAY or 
+oldconfig.RPC1_RAW_DELAY!=newconfig.RPC1_RAW_DELAY or 
+oldconfig.RPC_BXN_OFFSET!=newconfig.RPC_BXN_OFFSET or 
+oldconfig.RPC_EXISTS!=newconfig.RPC_EXISTS or 
+oldconfig.RPC_FIFO_DECOUPLE!=newconfig.RPC_FIFO_DECOUPLE or 
+oldconfig.RPC_FIFO_PRETRIG!=newconfig.RPC_FIFO_PRETRIG or 
+oldconfig.RPC_FIFO_TBINS!=newconfig.RPC_FIFO_TBINS or 
+oldconfig.RPC_MASK_ALL!=newconfig.RPC_MASK_ALL or 
+oldconfig.RPC_READ_ENABLE!=newconfig.RPC_READ_ENABLE or 
+oldconfig.SLOT!=newconfig.SLOT or 
+oldconfig.TMB_BXN_OFFSET!=newconfig.TMB_BXN_OFFSET or 
+oldconfig.TMB_FIFO_MODE!=newconfig.TMB_FIFO_MODE or 
+oldconfig.TMB_FIFO_NO_RAW_HITS!=newconfig.TMB_FIFO_NO_RAW_HITS or 
+oldconfig.TMB_FIRMWARE_COMPILE_TYPE!=newconfig.TMB_FIRMWARE_COMPILE_TYPE or 
+oldconfig.TMB_FIRMWARE_DAY!=newconfig.TMB_FIRMWARE_DAY or 
+oldconfig.TMB_FIRMWARE_MONTH!=newconfig.TMB_FIRMWARE_MONTH or 
+oldconfig.TMB_FIRMWARE_REVCODE!=newconfig.TMB_FIRMWARE_REVCODE or 
+oldconfig.TMB_FIRMWARE_TYPE!=newconfig.TMB_FIRMWARE_TYPE or 
+oldconfig.TMB_FIRMWARE_VERSION!=newconfig.TMB_FIRMWARE_VERSION or 
+oldconfig.TMB_FIRMWARE_YEAR!=newconfig.TMB_FIRMWARE_YEAR or 
+oldconfig.TMB_L1A_DELAY!=newconfig.TMB_L1A_DELAY or 
+oldconfig.TMB_L1A_OFFSET!=newconfig.TMB_L1A_OFFSET or 
+oldconfig.TMB_L1A_WINDOW_SIZE!=newconfig.TMB_L1A_WINDOW_SIZE or 
+oldconfig.TMB_TO_ALCT_DATA_DELAY!=newconfig.TMB_TO_ALCT_DATA_DELAY or 
+oldconfig.VALID_CLCT_REQUIRED!=newconfig.VALID_CLCT_REQUIRED or 
+oldconfig.WRITE_BUFFER_AUTOCLEAR!=newconfig.WRITE_BUFFER_AUTOCLEAR or 
+oldconfig.WRITE_BUFFER_CONTINOUS_ENABLE!=newconfig.WRITE_BUFFER_CONTINOUS_ENABLE or 
+oldconfig.WRITE_BUFFER_REQUIRED!=newconfig.WRITE_BUFFER_REQUIRED
+  or
+  oldalct.ALCT_ACCEL_MODE!=newalct.ALCT_ACCEL_MODE or
+  oldalct.ALCT_BXN_OFFSET!=newalct.ALCT_BXN_OFFSET or
+  oldalct.ALCT_CCB_ENABLE!=newalct.ALCT_CCB_ENABLE or
+  oldalct.ALCT_CONFIG_IN_READOUT!=newalct.ALCT_CONFIG_IN_READOUT or
+  oldalct.ALCT_DRIFT_DELAY!=newalct.ALCT_DRIFT_DELAY or
+  oldalct.ALCT_EXT_TRIG_ENABLE!=newalct.ALCT_EXT_TRIG_ENABLE or
+  oldalct.ALCT_FIFO_MODE!=newalct.ALCT_FIFO_MODE or
+  oldalct.ALCT_FIFO_PRETRIG!=newalct.ALCT_FIFO_PRETRIG or
+  oldalct.ALCT_FIFO_TBINS!=newalct.ALCT_FIFO_TBINS or
+  oldalct.ALCT_FIRMWARE_BACKWARD_FORWARD!=newalct.ALCT_FIRMWARE_BACKWARD_FORWARD or
+  oldalct.ALCT_FIRMWARE_DAY!=newalct.ALCT_FIRMWARE_DAY or
+  oldalct.ALCT_FIRMWARE_MONTH!=newalct.ALCT_FIRMWARE_MONTH or
+  oldalct.ALCT_FIRMWARE_NEGAT_POSIT!=newalct.ALCT_FIRMWARE_NEGAT_POSIT or
+  oldalct.ALCT_FIRMWARE_YEAR!=newalct.ALCT_FIRMWARE_YEAR or
+  oldalct.ALCT_INJECT_MODE!=newalct.ALCT_INJECT_MODE or
+  oldalct.ALCT_L1A_DELAY!=newalct.ALCT_L1A_DELAY or
+  oldalct.ALCT_L1A_INTERNAL!=newalct.ALCT_L1A_INTERNAL or
+  oldalct.ALCT_L1A_OFFSET!=newalct.ALCT_L1A_OFFSET or
+  oldalct.ALCT_L1A_WINDOW_WIDTH!=newalct.ALCT_L1A_WINDOW_WIDTH or
+  oldalct.ALCT_NPLANES_HIT_ACCEL_PATTERN!=newalct.ALCT_NPLANES_HIT_ACCEL_PATTERN or
+  oldalct.ALCT_NPLANES_HIT_ACCEL_PRETRIG!=newalct.ALCT_NPLANES_HIT_ACCEL_PRETRIG or
+  oldalct.ALCT_NPLANES_HIT_PATTERN!=newalct.ALCT_NPLANES_HIT_PATTERN or
+  oldalct.ALCT_NPLANES_HIT_PRETRIG!=newalct.ALCT_NPLANES_HIT_PRETRIG or
+  oldalct.ALCT_SEND_EMPTY!=newalct.ALCT_SEND_EMPTY or
+  oldalct.ALCT_SN_SELECT!=newalct.ALCT_SN_SELECT or
+  oldalct.ALCT_TESTPULSE_AMPLITUDE!=newalct.ALCT_TESTPULSE_AMPLITUDE or
+  oldalct.ALCT_TESTPULSE_DIRECTION!=newalct.ALCT_TESTPULSE_DIRECTION or
+  oldalct.ALCT_TESTPULSE_INVERT!=newalct.ALCT_TESTPULSE_INVERT or
+  oldalct.ALCT_TRIG_INFO_EN!=newalct.ALCT_TRIG_INFO_EN or
+  oldalct.ALCT_TRIG_MODE!=newalct.ALCT_TRIG_MODE or
+  oldalct.ALCT_ZERO_SUPPRESS!=newalct.ALCT_ZERO_SUPPRESS or
+  oldalct.CHAMBER_TYPE!=newalct.CHAMBER_TYPE
+  or exists (
+    select * from emu_anodechannel oldanodechannel,emu_anodechannel newanodechannel
+    where
+    oldanodechannel.ALCT_CONFIG_ID=oldalct.alct_config_id and
+    newanodechannel.ALCT_CONFIG_ID=newalct.alct_config_id
+    and oldanodechannel.afeb_number=newanodechannel.afeb_number
+    and (
+      oldanodechannel.afeb_fine_delay!=newanodechannel.afeb_fine_delay
+      or oldanodechannel.afeb_threshold!=newanodechannel.afeb_threshold
+    )
+  )
+)]]>
+    </sql:query>
+
+
+    <!-- TABLE: EMU_ALCT -->
+
+    <sql:insert xmlns:sql="urn:tstore-view-SQL" name="alct">
+      <sql:table name="EMU_ALCT"/>
+    </sql:insert>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="alct" expectedRows="1">
+      <sql:parameter name="EMU_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="XXX_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select * from EMU_ALCT where EMU_CONFIG_ID=$EMU_CONFIG_ID and TMB_CONFIG_ID=$XXX_CONFIG_ID]]>
+    </sql:query>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="alct_all" expectedRows="1">
+      <sql:parameter name="ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select * from EMU_ALCT where EMU_CONFIG_ID=$ID order by ALCT_CONFIG_ID]]>
+    </sql:query>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="alct_diff" expectedRows="1">
+      <sql:parameter name="OLD_EMU_CONFIG_ID">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="OLD_XXX_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="NEW_EMU_CONFIG_ID">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="NEW_XXX_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select
+oldconfig.ALCT_CONFIG_ID "ALCT_CONFIG_ID $OLD_EMU_CONFIG_ID",newconfig.ALCT_CONFIG_ID "ALCT_CONFIG_ID $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_ACCEL_MODE "ALCT_ACCEL_MODE $OLD_EMU_CONFIG_ID",newconfig.ALCT_ACCEL_MODE "ALCT_ACCEL_MODE $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_BXN_OFFSET "ALCT_BXN_OFFSET $OLD_EMU_CONFIG_ID",newconfig.ALCT_BXN_OFFSET "ALCT_BXN_OFFSET $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_CCB_ENABLE "ALCT_CCB_ENABLE $OLD_EMU_CONFIG_ID",newconfig.ALCT_CCB_ENABLE "ALCT_CCB_ENABLE $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_CONFIG_IN_READOUT "ALCT_CONFIG_IN_READOUT $OLD_EMU_CONFIG_ID",newconfig.ALCT_CONFIG_IN_READOUT "ALCT_CONFIG_IN_READOUT $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_DRIFT_DELAY "ALCT_DRIFT_DELAY $OLD_EMU_CONFIG_ID",newconfig.ALCT_DRIFT_DELAY "ALCT_DRIFT_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_EXT_TRIG_ENABLE "ALCT_EXT_TRIG_ENABLE $OLD_EMU_CONFIG_ID",newconfig.ALCT_EXT_TRIG_ENABLE "ALCT_EXT_TRIG_ENABLE $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_FIFO_MODE "ALCT_FIFO_MODE $OLD_EMU_CONFIG_ID",newconfig.ALCT_FIFO_MODE "ALCT_FIFO_MODE $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_FIFO_PRETRIG "ALCT_FIFO_PRETRIG $OLD_EMU_CONFIG_ID",newconfig.ALCT_FIFO_PRETRIG "ALCT_FIFO_PRETRIG $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_FIFO_TBINS "ALCT_FIFO_TBINS $OLD_EMU_CONFIG_ID",newconfig.ALCT_FIFO_TBINS "ALCT_FIFO_TBINS $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_FIRMWARE_BACKWARD_FORWARD "ALCT_FIRMWARE_BACKWARD $OLD_EMU_CONFIG_ID",newconfig.ALCT_FIRMWARE_BACKWARD_FORWARD "ALCT_FIRMWARE_BACKWARD $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_FIRMWARE_DAY "ALCT_FIRMWARE_DAY $OLD_EMU_CONFIG_ID",newconfig.ALCT_FIRMWARE_DAY "ALCT_FIRMWARE_DAY $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_FIRMWARE_MONTH "ALCT_FIRMWARE_MONTH $OLD_EMU_CONFIG_ID",newconfig.ALCT_FIRMWARE_MONTH "ALCT_FIRMWARE_MONTH $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_FIRMWARE_NEGAT_POSIT "ALCT_FIRMWARE_NEGAT_PO $OLD_EMU_CONFIG_ID",newconfig.ALCT_FIRMWARE_NEGAT_POSIT "ALCT_FIRMWARE_NEGAT_PO $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_FIRMWARE_YEAR "ALCT_FIRMWARE_YEAR $OLD_EMU_CONFIG_ID",newconfig.ALCT_FIRMWARE_YEAR "ALCT_FIRMWARE_YEAR $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_INJECT_MODE "ALCT_INJECT_MODE $OLD_EMU_CONFIG_ID",newconfig.ALCT_INJECT_MODE "ALCT_INJECT_MODE $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_L1A_DELAY "ALCT_L1A_DELAY $OLD_EMU_CONFIG_ID",newconfig.ALCT_L1A_DELAY "ALCT_L1A_DELAY $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_L1A_INTERNAL "ALCT_L1A_INTERNAL $OLD_EMU_CONFIG_ID",newconfig.ALCT_L1A_INTERNAL "ALCT_L1A_INTERNAL $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_L1A_OFFSET "ALCT_L1A_OFFSET $OLD_EMU_CONFIG_ID",newconfig.ALCT_L1A_OFFSET "ALCT_L1A_OFFSET $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_L1A_WINDOW_WIDTH "ALCT_L1A_WINDOW_WIDTH $OLD_EMU_CONFIG_ID",newconfig.ALCT_L1A_WINDOW_WIDTH "ALCT_L1A_WINDOW_WIDTH $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_NPLANES_HIT_ACCEL_PATTERN "NPLANES_HIT_ACCEL_PATT $OLD_EMU_CONFIG_ID",newconfig.ALCT_NPLANES_HIT_ACCEL_PATTERN "NPLANES_HIT_ACCEL_PATT $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_NPLANES_HIT_ACCEL_PRETRIG "NPLANES_HIT_ACCEL_PRET $OLD_EMU_CONFIG_ID",newconfig.ALCT_NPLANES_HIT_ACCEL_PRETRIG "NPLANES_HIT_ACCEL_PRET $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_NPLANES_HIT_PATTERN "ALCT_NPLANES_HIT_PATTE $OLD_EMU_CONFIG_ID",newconfig.ALCT_NPLANES_HIT_PATTERN "ALCT_NPLANES_HIT_PATTE $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_NPLANES_HIT_PRETRIG "ALCT_NPLANES_HIT_PRETR $OLD_EMU_CONFIG_ID",newconfig.ALCT_NPLANES_HIT_PRETRIG "ALCT_NPLANES_HIT_PRETR $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_SEND_EMPTY "ALCT_SEND_EMPTY $OLD_EMU_CONFIG_ID",newconfig.ALCT_SEND_EMPTY "ALCT_SEND_EMPTY $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_SN_SELECT "ALCT_SN_SELECT $OLD_EMU_CONFIG_ID",newconfig.ALCT_SN_SELECT "ALCT_SN_SELECT $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_TESTPULSE_AMPLITUDE "ALCT_TESTPULSE_AMPLITU $OLD_EMU_CONFIG_ID",newconfig.ALCT_TESTPULSE_AMPLITUDE "ALCT_TESTPULSE_AMPLITU $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_TESTPULSE_DIRECTION "ALCT_TESTPULSE_DIRECTI $OLD_EMU_CONFIG_ID",newconfig.ALCT_TESTPULSE_DIRECTION "ALCT_TESTPULSE_DIRECTI $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_TESTPULSE_INVERT "ALCT_TESTPULSE_INVERT $OLD_EMU_CONFIG_ID",newconfig.ALCT_TESTPULSE_INVERT "ALCT_TESTPULSE_INVERT $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_TRIG_INFO_EN "ALCT_TRIG_INFO_EN $OLD_EMU_CONFIG_ID",newconfig.ALCT_TRIG_INFO_EN "ALCT_TRIG_INFO_EN $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_TRIG_MODE "ALCT_TRIG_MODE $OLD_EMU_CONFIG_ID",newconfig.ALCT_TRIG_MODE "ALCT_TRIG_MODE $NEW_EMU_CONFIG_ID",
+oldconfig.ALCT_ZERO_SUPPRESS "ALCT_ZERO_SUPPRESS $OLD_EMU_CONFIG_ID",newconfig.ALCT_ZERO_SUPPRESS "ALCT_ZERO_SUPPRESS $NEW_EMU_CONFIG_ID",
+oldconfig.CHAMBER_TYPE "CHAMBER_TYPE $OLD_EMU_CONFIG_ID",newconfig.CHAMBER_TYPE "CHAMBER_TYPE $NEW_EMU_CONFIG_ID"
+
+    from EMU_ALCT oldconfig,EMU_ALCT newconfig 
+    where
+      oldconfig.EMU_CONFIG_ID=$OLD_EMU_CONFIG_ID
+      and newconfig.EMU_CONFIG_ID=$NEW_EMU_CONFIG_ID
+      and oldconfig.TMB_CONFIG_ID=$OLD_XXX_CONFIG_ID
+      and newconfig.TMB_CONFIG_ID=$NEW_XXX_CONFIG_ID
+      and  ( oldconfig.ALCT_ACCEL_MODE!=newconfig.ALCT_ACCEL_MODE or 
+oldconfig.ALCT_BXN_OFFSET!=newconfig.ALCT_BXN_OFFSET or 
+oldconfig.ALCT_CCB_ENABLE!=newconfig.ALCT_CCB_ENABLE or 
+oldconfig.ALCT_CONFIG_IN_READOUT!=newconfig.ALCT_CONFIG_IN_READOUT or 
+oldconfig.ALCT_DRIFT_DELAY!=newconfig.ALCT_DRIFT_DELAY or 
+oldconfig.ALCT_EXT_TRIG_ENABLE!=newconfig.ALCT_EXT_TRIG_ENABLE or 
+oldconfig.ALCT_FIFO_MODE!=newconfig.ALCT_FIFO_MODE or 
+oldconfig.ALCT_FIFO_PRETRIG!=newconfig.ALCT_FIFO_PRETRIG or 
+oldconfig.ALCT_FIFO_TBINS!=newconfig.ALCT_FIFO_TBINS or 
+oldconfig.ALCT_FIRMWARE_BACKWARD_FORWARD!=newconfig.ALCT_FIRMWARE_BACKWARD_FORWARD or 
+oldconfig.ALCT_FIRMWARE_DAY!=newconfig.ALCT_FIRMWARE_DAY or 
+oldconfig.ALCT_FIRMWARE_MONTH!=newconfig.ALCT_FIRMWARE_MONTH or 
+oldconfig.ALCT_FIRMWARE_NEGAT_POSIT!=newconfig.ALCT_FIRMWARE_NEGAT_POSIT or 
+oldconfig.ALCT_FIRMWARE_YEAR!=newconfig.ALCT_FIRMWARE_YEAR or 
+oldconfig.ALCT_INJECT_MODE!=newconfig.ALCT_INJECT_MODE or 
+oldconfig.ALCT_L1A_DELAY!=newconfig.ALCT_L1A_DELAY or 
+oldconfig.ALCT_L1A_INTERNAL!=newconfig.ALCT_L1A_INTERNAL or 
+oldconfig.ALCT_L1A_OFFSET!=newconfig.ALCT_L1A_OFFSET or 
+oldconfig.ALCT_L1A_WINDOW_WIDTH!=newconfig.ALCT_L1A_WINDOW_WIDTH or 
+oldconfig.ALCT_NPLANES_HIT_ACCEL_PATTERN!=newconfig.ALCT_NPLANES_HIT_ACCEL_PATTERN or 
+oldconfig.ALCT_NPLANES_HIT_ACCEL_PRETRIG!=newconfig.ALCT_NPLANES_HIT_ACCEL_PRETRIG or 
+oldconfig.ALCT_NPLANES_HIT_PATTERN!=newconfig.ALCT_NPLANES_HIT_PATTERN or 
+oldconfig.ALCT_NPLANES_HIT_PRETRIG!=newconfig.ALCT_NPLANES_HIT_PRETRIG or 
+oldconfig.ALCT_SEND_EMPTY!=newconfig.ALCT_SEND_EMPTY or 
+oldconfig.ALCT_SN_SELECT!=newconfig.ALCT_SN_SELECT or 
+oldconfig.ALCT_TESTPULSE_AMPLITUDE!=newconfig.ALCT_TESTPULSE_AMPLITUDE or 
+oldconfig.ALCT_TESTPULSE_DIRECTION!=newconfig.ALCT_TESTPULSE_DIRECTION or 
+oldconfig.ALCT_TESTPULSE_INVERT!=newconfig.ALCT_TESTPULSE_INVERT or 
+oldconfig.ALCT_TRIG_INFO_EN!=newconfig.ALCT_TRIG_INFO_EN or 
+oldconfig.ALCT_TRIG_MODE!=newconfig.ALCT_TRIG_MODE or 
+oldconfig.ALCT_ZERO_SUPPRESS!=newconfig.ALCT_ZERO_SUPPRESS or 
+oldconfig.CHAMBER_TYPE!=newconfig.CHAMBER_TYPE or 
+/*also select any whose afebs have changed*/
+exists (
+    select * from emu_anodechannel oldanodechannel,emu_anodechannel newanodechannel
+    where
+    oldanodechannel.ALCT_CONFIG_ID=oldconfig.alct_config_id and
+    newanodechannel.ALCT_CONFIG_ID=newconfig.alct_config_id
+    and oldanodechannel.afeb_number=newanodechannel.afeb_number
+    and (
+      oldanodechannel.afeb_fine_delay!=newanodechannel.afeb_fine_delay
+      or oldanodechannel.afeb_threshold!=newanodechannel.afeb_threshold
+    )
+  )
+)]]>
+    </sql:query>
+
+
+    <!-- TABLE: EMU_ANODECHANNEL -->
+    <sql:insert xmlns:sql="urn:tstore-view-SQL" name="anodechannel">
+      <sql:table name="EMU_ANODECHANNEL"/>
+    </sql:insert>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="anodechannel" expectedRows="24">
+      <sql:parameter name="EMU_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="XXX_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select * from EMU_ANODECHANNEL where EMU_CONFIG_ID=$EMU_CONFIG_ID and ALCT_CONFIG_ID=$XXX_CONFIG_ID]]>
+    </sql:query>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="anodechannel_all" expectedRows="9720">
+      <sql:parameter name="ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select * from EMU_ANODECHANNEL where EMU_CONFIG_ID=$ID order by AFEB_CONFIG_ID]]>
+    </sql:query>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="anodechannel_diff" expectedRows="24">
+      <sql:parameter name="OLD_EMU_CONFIG_ID">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="OLD_XXX_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="NEW_EMU_CONFIG_ID">
+        <![CDATA[]]>
+      </sql:parameter>
+      <sql:parameter name="NEW_XXX_CONFIG_ID" bind="yes">
+        <![CDATA[]]>
+      </sql:parameter>
+      <![CDATA[select oldconfig.afeb_number,oldconfig.afeb_threshold "afeb_threshold $OLD_EMU_CONFIG_ID",newconfig.afeb_threshold "afeb_threshold $NEW_EMU_CONFIG_ID",oldconfig.afeb_fine_delay "afeb_fine_delay $OLD_EMU_CONFIG_ID",newconfig.afeb_fine_delay "afeb_fine_delay $NEW_EMU_CONFIG_ID" 
+from EMU_ANODECHANNEL oldconfig,EMU_ANODECHANNEL newconfig where
+oldconfig.EMU_CONFIG_ID=$OLD_EMU_CONFIG_ID and oldconfig.ALCT_CONFIG_ID=$OLD_XXX_CONFIG_ID
+and newconfig.EMU_CONFIG_ID=$NEW_EMU_CONFIG_ID and newconfig.ALCT_CONFIG_ID=$NEW_XXX_CONFIG_ID
+and oldconfig.afeb_number=newconfig.afeb_number
+and (oldconfig.afeb_fine_delay!=newconfig.afeb_fine_delay
+  or oldconfig.afeb_threshold!=newconfig.afeb_threshold)]]>
+    </sql:query>
+
+
+    <!-- TABLE: EMU_FLASH_WRITE -->
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="list_flash_write">
+      <sql:parameter name="SIDE">
+        <![CDATA[]]>
+      </sql:parameter> 
+      <![CDATA[select * 
+from emu_flash_write, emu_configuration
+where     emu_configuration.emu_config_id=emu_flash_write.config_id
+      and emu_configuration.emu_endcap_side='$SIDE'
+order by write_date desc]]>
+    </sql:query>
+
+    <sql:query xmlns:sql="urn:tstore-view-SQL" name="latest_flash_write" expectedRows="1">
+      <sql:parameter name="SIDE">
+        <![CDATA[]]>
+      </sql:parameter> 
+      <![CDATA[select * 
+from (
+  select emu_flash_write.config_id
+  from emu_flash_write, emu_configuration
+  where     emu_configuration.emu_config_id=emu_flash_write.config_id
+        and emu_configuration.emu_endcap_side='$SIDE'
+  order by write_date desc)
+where rownum=1]]>
+    </sql:query>
+
+    <sql:insert name="flash_write"  xmlns:sql="urn:tstore-view-SQL" >
+      <sql:table name="EMU_FLASH_WRITE"/>
+    </sql:insert>
+
+
+    <!-- Table definitions-->
+
+    <tstore:table key="emu_config_id" name="EMU_Configuration">
+      <tstore:column name="description" type="string"/>
+      <tstore:column name="emu_config_id" type="unsigned int 64"/>
+      <tstore:column name="emu_config_time" type="time"/>
+      <tstore:column name="emu_config_type" type="string"/>
+      <tstore:column name="emu_endcap_side" type="string"/>
+    </tstore:table>
+
+    <tstore:table key="periph_config_id" name="EMU_PeripheralCrate">
+      <tstore:column name="crateID" type="unsigned short"/>
+      <tstore:column name="emu_config_id" type="unsigned int 64"/>
+      <tstore:column name="label" type="string"/>
+      <tstore:column name="periph_config_id" type="unsigned int 64"/>
+      <tstore:foreignkey references="EMU_Configuration">
+        <tstore:keycolumn column="emu_config_id" references="emu_config_id"/>
+      </tstore:foreignkey>
+    </tstore:table>
+
+    <tstore:table key="ccb_config_id" name="EMU_CCB">
+      <tstore:column name="ccb_config_id" type="unsigned int 64"/>
+      <tstore:column name="CCBmode" type="unsigned short"/>
+      <tstore:column name="ccb_firmware_day" type="unsigned short"/>
+      <tstore:column name="ccb_firmware_month" type="unsigned short"/>
+      <tstore:column name="ccb_firmware_year" type="unsigned short"/>
+      <tstore:column name="emu_config_id" type="unsigned int 64"/>
+      <tstore:column name="l1aDelay" type="unsigned short"/>
+      <tstore:column name="periph_config_id" type="unsigned int 64"/>
+      <tstore:column name="TTCrxID" type="unsigned short"/>
+      <tstore:column name="TTCrxCoarseDelay" type="unsigned short"/>
+      <tstore:column name="TTCrxFineDelay" type="unsigned short"/>
+      <tstore:foreignkey references="EMU_PeripheralCrate">
+        <tstore:keycolumn column="periph_config_id" references="periph_config_id"/>
+      </tstore:foreignkey>
+      <tstore:foreignkey references="EMU_Configuration">
+        <tstore:keycolumn column="emu_config_id" references="emu_config_id"/>
+      </tstore:foreignkey>
+    </tstore:table>
+
+    <tstore:table key="mpc_config_id" name="EMU_MPC">
+      <tstore:column name="emu_config_id" type="unsigned int 64"/>
+      <tstore:column name="mpc_config_id" type="unsigned int 64"/>
+      <tstore:column name="mpc_firmware_day" type="unsigned short"/>
+      <tstore:column name="mpc_firmware_month" type="unsigned short"/>
+      <tstore:column name="mpc_firmware_year" type="unsigned short"/>
+      <tstore:column name="periph_config_id" type="unsigned int 64"/>
+      <tstore:column name="serializermode" type="unsigned short"/>
+      <tstore:column name="TransparentMode" type="unsigned short"/>
+      <tstore:foreignkey references="EMU_PeripheralCrate">
+        <tstore:keycolumn column="periph_config_id" references="periph_config_id"/>
+      </tstore:foreignkey>
+      <tstore:foreignkey references="EMU_Configuration">
+        <tstore:keycolumn column="emu_config_id" references="emu_config_id"/>
+      </tstore:foreignkey>
+    </tstore:table>
+
+    <tstore:table key="vcc_config_id" name="EMU_VCC">
+      <tstore:column name="BGTO" type="string"/>
+      <tstore:column name="BTO" type="string"/>
+      <tstore:column name="Dflt_Srv_MAC" type="string"/>
+      <tstore:column name="emu_config_id" type="unsigned int 64"/>
+      <tstore:column name="eth_port" type="unsigned short"/>
+      <tstore:column name="Ethernet_CR" type="string"/>
+      <tstore:column name="Ext_FIFO_CR" type="string"/>
+      <tstore:column name="MAC_addr" type="string"/>
+      <tstore:column name="MCAST_1" type="string"/>
+      <tstore:column name="MCAST_2" type="string"/>
+      <tstore:column name="MCAST_3" type="string"/>
+      <tstore:column name="Msg_Lvl" type="unsigned short"/>
+      <tstore:column name="periph_config_id" type="unsigned int 64"/>
+      <tstore:column name="Pkt_On_Startup" type="string"/>
+      <tstore:column name="Rst_Misc_CR" type="string"/>
+      <tstore:column name="vcc_config_id" type="unsigned int 64"/>
+      <tstore:column name="VCC_frmw_ver" type="string"/>
+      <tstore:column name="VME_CR" type="string"/>
+      <tstore:column name="Warn_On_Shtdwn" type="string"/>
+      <tstore:foreignkey references="EMU_PeripheralCrate">
+        <tstore:keycolumn column="periph_config_id" references="periph_config_id"/>
+      </tstore:foreignkey>
+      <tstore:foreignkey references="EMU_Configuration">
+        <tstore:keycolumn column="emu_config_id" references="emu_config_id"/>
+      </tstore:foreignkey>
+    </tstore:table>
+
+    <tstore:table key="csc_config_id" name="EMU_CSC">
+      <tstore:column name="csc_config_id" type="unsigned int 64"/>
+      <tstore:column name="emu_config_id" type="unsigned int 64"/>
+      <tstore:column name="label" type="string"/>
+      <tstore:column name="known_problem" type="string"/>
+      <tstore:column name="problem_mask" type="unsigned short"/>
+      <tstore:column name="periph_config_id" type="unsigned int 64"/>
+      <tstore:foreignkey references="EMU_PeripheralCrate">
+        <tstore:keycolumn column="periph_config_id" references="periph_config_id"/>
+      </tstore:foreignkey>
+      <tstore:foreignkey references="EMU_Configuration">
+        <tstore:keycolumn column="emu_config_id" references="emu_config_id"/>
+      </tstore:foreignkey>
+    </tstore:table>
+
+    <tstore:table key="daqmb_config_id" name="EMU_DAQMB">
+      <tstore:column name="alct_dav_cable_delay" type="unsigned short"/>
+      <tstore:column name="calibration_l1acc_delay" type="unsigned short"/>
+      <tstore:column name="calibration_LCT_delay" type="unsigned short"/>
+      <tstore:column name="cfeb_cable_delay" type="unsigned short"/>
+      <tstore:column name="cfeb_dav_cable_delay" type="unsigned short"/>
+      <tstore:column name="comp_mode" type="unsigned short"/>
+      <tstore:column name="comp_timing" type="unsigned short"/>
+      <tstore:column name="csc_config_id" type="unsigned int 64"/>
+      <tstore:column name="daqmb_config_id" type="unsigned int 64"/>
+      <tstore:column name="dmb_cntl_firmware_tag" type="string"/>
+      <tstore:column name="dmb_vme_firmware_tag" type="unsigned short"/>
+      <tstore:column name="emu_config_id" type="unsigned int 64"/>
+      <tstore:column name="feb_clock_delay" type="unsigned short"/>
+      <tstore:column name="inj_dac_set" type="float"/>
+      <tstore:column name="inject_delay" type="unsigned short"/>
+      <tstore:column name="kill_input" type="unsigned short"/>
+      <tstore:column name="pre_block_end" type="unsigned short"/>
+      <tstore:column name="pul_dac_set" type="float"/>
+      <tstore:column name="pulse_delay" type="unsigned short"/>
+      <tstore:column name="set_comp_thresh" type="float"/>
+      <tstore:column name="slot" type="unsigned short"/>
+      <tstore:column name="tmb_lct_cable_delay" type="unsigned short"/>
+      <tstore:column name="xFineLatency" type="unsigned short"/>
+      <tstore:column name="xLatency" type="unsigned short"/>
+      <tstore:column name="power_mask" type="unsigned short"/>
+      <tstore:foreignkey references="EMU_CSC">
+        <tstore:keycolumn column="csc_config_id" references="csc_config_id"/>
+      </tstore:foreignkey>
+      <tstore:foreignkey references="EMU_Configuration">
+        <tstore:keycolumn column="emu_config_id" references="emu_config_id"/>
+      </tstore:foreignkey>
+    </tstore:table>
+
+    <tstore:table key="cfeb_config_id" name="EMU_CFEB">
+      <tstore:column name="cfeb_config_id" type="unsigned int 64"/>
+      <tstore:column name="cfeb_firmware_tag" type="string"/>
+      <tstore:column name="cfeb_number" type="unsigned short"/>
+      <tstore:column name="daqmb_config_id" type="unsigned int 64"/>
+      <tstore:column name="emu_config_id" type="unsigned int 64"/>
+      <tstore:column name="kill_chip0" type="string"/>
+      <tstore:column name="kill_chip1" type="string"/>
+      <tstore:column name="kill_chip2" type="string"/>
+      <tstore:column name="kill_chip3" type="string"/>
+      <tstore:column name="kill_chip4" type="string"/>
+      <tstore:column name="kill_chip5" type="string"/>
+      <tstore:foreignkey references="EMU_DAQMB">
+        <tstore:keycolumn column="daqmb_config_id" references="daqmb_config_id"/>
+      </tstore:foreignkey>
+      <tstore:foreignkey references="EMU_Configuration">
+        <tstore:keycolumn column="emu_config_id" references="emu_config_id"/>
+      </tstore:foreignkey>
+    </tstore:table>
+
+    <tstore:table key="tmb_config_id" name="EMU_TMB">
+      <tstore:column name="adjacent_cfeb_distance" type="unsigned short"/>
+      <tstore:column name="aff_thresh" type="unsigned short"/>
+      <tstore:column name="alct_bx0_delay" type="unsigned short"/>
+      <tstore:column name="alct_bx0_enable" type="unsigned short"/>
+      <tstore:column name="alct_clear" type="unsigned short"/>
+      <tstore:column name="alct_clock_en_use_ccb" type="unsigned short"/>
+      <tstore:column name="alct_pretrig_enable" type="unsigned short"/>
+      <tstore:column name="alct_readout_without_trig" type="unsigned short"/>
+      <tstore:column name="alct_rx_clock_delay" type="unsigned short"/>
+      <tstore:column name="alct_trig_enable" type="unsigned short"/>
+      <tstore:column name="alct_tx_clock_delay" type="unsigned short"/>
+      <tstore:column name="alct_posneg" type="unsigned short"/>
+      <tstore:column name="alct_tx_posneg" type="unsigned short"/>
+      <tstore:column name="all_cfeb_active" type="unsigned short"/>
+      <tstore:column name="cfeb0delay" type="unsigned short"/>
+      <tstore:column name="cfeb1delay" type="unsigned short"/>
+      <tstore:column name="cfeb2delay" type="unsigned short"/>
+      <tstore:column name="cfeb3delay" type="unsigned short"/>
+      <tstore:column name="cfeb4delay" type="unsigned short"/>
+      <tstore:column name="cfeb_enable_source" type="unsigned short"/>
+      <tstore:column name="clct_blanking" type="unsigned short"/>
+      <tstore:column name="clct_bx0_delay" type="unsigned short"/>
+      <tstore:column name="clct_drift_delay" type="unsigned short"/>
+      <tstore:column name="clct_ext_pretrig_enable" type="unsigned short"/>
+      <tstore:column name="clct_fifo_pretrig" type="unsigned short"/>
+      <tstore:column name="clct_fifo_tbins" type="unsigned short"/>
+      <tstore:column name="clct_hit_persist" type="unsigned short"/>
+      <tstore:column name="clct_min_separation" type="unsigned short"/>
+      <tstore:column name="clct_nplanes_hit_pattern" type="unsigned short"/>
+      <tstore:column name="clct_nplanes_hit_pretrig" type="unsigned short"/>
+      <tstore:column name="clct_pid_thresh_pretrig" type="unsigned short"/>
+      <tstore:column name="clct_pretrig_enable" type="unsigned short"/>
+      <tstore:column name="clct_readout_without_trig" type="unsigned short"/>
+      <tstore:column name="clct_throttle" type="unsigned short"/>
+      <tstore:column name="clct_trig_enable" type="unsigned short"/>
+      <tstore:column name="csc_config_id" type="unsigned int 64"/>
+      <tstore:column name="dmb_tx_delay" type="unsigned short"/>
+      <tstore:column name="emu_config_id" type="unsigned int 64"/>
+      <tstore:column name="enable_alct_rx" type="unsigned short"/>
+      <tstore:column name="enable_alct_tx" type="unsigned short"/>
+      <tstore:column name="enableCLCTInputs_reg42" type="unsigned short"/>
+      <tstore:column name="enableCLCTInputs_reg68" type="unsigned short"/>
+      <tstore:column name="ignore_ccb_startstop" type="unsigned short"/>
+      <tstore:column name="l1a_allow_alct_only" type="unsigned short"/>
+      <tstore:column name="l1a_allow_match" type="unsigned short"/>
+      <tstore:column name="l1a_allow_nol1a" type="unsigned short"/>
+      <tstore:column name="l1a_allow_notmb" type="unsigned short"/>
+      <tstore:column name="layer0_distrip_hot_chann_mask" type="string"/>
+      <tstore:column name="layer1_distrip_hot_chann_mask" type="string"/>
+      <tstore:column name="layer2_distrip_hot_chann_mask" type="string"/>
+      <tstore:column name="layer3_distrip_hot_chann_mask" type="string"/>
+      <tstore:column name="layer4_distrip_hot_chann_mask" type="string"/>
+      <tstore:column name="layer5_distrip_hot_chann_mask" type="string"/>
+      <tstore:column name="layer_trig_enable" type="unsigned short"/>
+      <tstore:column name="layer_trig_thresh" type="unsigned short"/>
+      <tstore:column name="match_pretrig_alct_delay" type="unsigned short"/>
+      <tstore:column name="match_pretrig_enable" type="unsigned short"/>
+      <tstore:column name="match_pretrig_window_size" type="unsigned short"/>
+      <tstore:column name="match_readout_without_trig" type="unsigned short"/>
+      <tstore:column name="match_trig_alct_delay" type="unsigned short"/>
+      <tstore:column name="match_trig_enable" type="unsigned short"/>
+      <tstore:column name="match_trig_window_size" type="unsigned short"/>
+      <tstore:column name="mpc_block_me1a" type="unsigned short"/>
+      <tstore:column name="mpc_idle_blank" type="unsigned short"/>
+      <tstore:column name="mpc_output_enable" type="unsigned short"/>
+      <tstore:column name="mpc_rx_delay" type="unsigned short"/>
+      <tstore:column name="mpc_sync_err_enable" type="unsigned short"/>
+      <tstore:column name="mpc_tx_delay" type="unsigned short"/>
+      <tstore:column name="rat_firmware_day" type="unsigned short"/>
+      <tstore:column name="rat_firmware_month" type="unsigned short"/>
+      <tstore:column name="rat_firmware_year" type="unsigned short"/>
+      <tstore:column name="rat_tmb_delay" type="unsigned short"/>
+      <tstore:column name="request_l1a" type="unsigned short"/>
+      <tstore:column name="rpc0_rat_delay" type="unsigned short"/>
+      <tstore:column name="rpc0_raw_delay" type="unsigned short"/>
+      <tstore:column name="rpc1_rat_delay" type="unsigned short"/>
+      <tstore:column name="rpc1_raw_delay" type="unsigned short"/>
+      <tstore:column name="rpc_bxn_offset" type="unsigned short"/>
+      <tstore:column name="rpc_exists" type="unsigned short"/>
+      <tstore:column name="rpc_fifo_decouple" type="unsigned short"/>
+      <tstore:column name="rpc_fifo_pretrig" type="unsigned short"/>
+      <tstore:column name="rpc_fifo_tbins" type="unsigned short"/>
+      <tstore:column name="rpc_mask_all" type="unsigned short"/>
+      <tstore:column name="rpc_read_enable" type="unsigned short"/>
+      <tstore:column name="slot" type="unsigned short"/>
+      <tstore:column name="tmb_bxn_offset" type="unsigned short"/>
+      <tstore:column name="tmb_config_id" type="unsigned int 64"/>
+      <tstore:column name="tmb_fifo_mode" type="unsigned short"/>
+      <tstore:column name="tmb_fifo_no_raw_hits" type="unsigned short"/>
+      <tstore:column name="tmb_firmware_compile_type" type="string"/>
+      <tstore:column name="tmb_firmware_day" type="unsigned short"/>
+      <tstore:column name="tmb_firmware_month" type="unsigned short"/>
+      <tstore:column name="tmb_firmware_revcode" type="unsigned short"/>
+      <tstore:column name="tmb_firmware_type" type="unsigned short"/>
+      <tstore:column name="tmb_firmware_version" type="unsigned short"/>
+      <tstore:column name="tmb_firmware_year" type="unsigned short"/>
+      <tstore:column name="tmb_l1a_delay" type="unsigned short"/>
+      <tstore:column name="tmb_l1a_offset" type="unsigned short"/>
+      <tstore:column name="tmb_l1a_window_size" type="unsigned short"/>
+      <tstore:column name="valid_clct_required" type="unsigned short"/>
+      <tstore:column name="write_buffer_autoclear" type="unsigned short"/>
+      <tstore:column name="write_buffer_continous_enable" type="unsigned short"/>
+      <tstore:column name="write_buffer_required" type="unsigned short"/>
+      <tstore:column name="cfeb0posneg" type="unsigned short"/>
+      <tstore:column name="cfeb1posneg" type="unsigned short"/>
+      <tstore:column name="cfeb2posneg" type="unsigned short"/>
+      <tstore:column name="cfeb3posneg" type="unsigned short"/>
+      <tstore:column name="cfeb4posneg" type="unsigned short"/>
+      <tstore:column name="mpc_sel_ttc_bx0" type="unsigned short"/>
+      <tstore:column name="alct_tof_delay" type="unsigned short"/>
+      <tstore:column name="tmb_to_alct_data_delay" type="unsigned short"/>
+      <tstore:column name="cfeb_tof_delay" type="unsigned short"/>
+      <tstore:column name="cfeb0_tof_delay" type="unsigned short"/>
+      <tstore:column name="cfeb1_tof_delay" type="unsigned short"/>
+      <tstore:column name="cfeb2_tof_delay" type="unsigned short"/>
+      <tstore:column name="cfeb3_tof_delay" type="unsigned short"/>
+      <tstore:column name="cfeb4_tof_delay" type="unsigned short"/>
+      <tstore:column name="cfeb_badbits_block" type="unsigned short"/>
+      <tstore:column name="cfeb0_rxd_int_delay" type="unsigned short"/>
+      <tstore:column name="cfeb1_rxd_int_delay" type="unsigned short"/>
+      <tstore:column name="cfeb2_rxd_int_delay" type="unsigned short"/>
+      <tstore:column name="cfeb3_rxd_int_delay" type="unsigned short"/>
+      <tstore:column name="cfeb4_rxd_int_delay" type="unsigned short"/>
+      <tstore:column name="cfeb_badbits_readout" type="unsigned short"/>
+      <tstore:column name="l1a_priority_enable" type="unsigned short"/>
+      <tstore:column name="miniscope_enable" type="unsigned short"/>
+
+      <tstore:foreignkey references="EMU_CSC">
+        <tstore:keycolumn column="csc_config_id" references="csc_config_id"/>
+      </tstore:foreignkey>
+      <tstore:foreignkey references="EMU_Configuration">
+        <tstore:keycolumn column="emu_config_id" references="emu_config_id"/>
+      </tstore:foreignkey>
+    </tstore:table>
+
+    <tstore:table key="alct_config_id" name="EMU_ALCT">
+      <tstore:column name="alct_accel_mode" type="unsigned short"/>
+      <tstore:column name="alct_nplanes_hit_accel_pattern" type="unsigned short"/>
+      <tstore:column name="alct_nplanes_hit_accel_pretrig" type="unsigned short"/>
+      <tstore:column name="alct_bxn_offset" type="unsigned short"/>
+      <tstore:column name="alct_ccb_enable" type="unsigned short"/>
+      <tstore:column name="alct_config_id" type="unsigned int 64"/>
+      <tstore:column name="alct_config_in_readout" type="unsigned short"/>
+      <tstore:column name="alct_drift_delay" type="unsigned short"/>
+      <tstore:column name="alct_ext_trig_enable" type="unsigned short"/>
+      <tstore:column name="alct_fifo_mode" type="unsigned short"/>
+      <tstore:column name="alct_fifo_pretrig" type="unsigned short"/>
+      <tstore:column name="alct_fifo_tbins" type="unsigned short"/>
+      <tstore:column name="alct_firmware_backward_forward" type="string"/>
+      <tstore:column name="alct_firmware_day" type="unsigned short"/>
+      <tstore:column name="alct_firmware_month" type="unsigned short"/>
+      <tstore:column name="alct_firmware_negat_posit" type="string"/>
+      <tstore:column name="alct_firmware_year" type="unsigned short"/>
+      <tstore:column name="alct_inject_mode" type="unsigned short"/>
+      <tstore:column name="alct_l1a_delay" type="unsigned short"/>
+      <tstore:column name="alct_l1a_internal" type="unsigned short"/>
+      <tstore:column name="alct_l1a_offset" type="unsigned short"/>
+      <tstore:column name="alct_l1a_window_width" type="unsigned short"/>
+      <tstore:column name="alct_nplanes_hit_pattern" type="unsigned short"/>
+      <tstore:column name="alct_nplanes_hit_pretrig" type="unsigned short"/>
+      <tstore:column name="alct_send_empty" type="unsigned short"/>
+      <tstore:column name="alct_sn_select" type="unsigned short"/>
+      <tstore:column name="alct_testpulse_amplitude" type="unsigned short"/>
+      <tstore:column name="alct_testpulse_direction" type="string"/>
+      <tstore:column name="alct_testpulse_invert" type="string"/>
+      <tstore:column name="alct_trig_info_en" type="unsigned short"/>
+      <tstore:column name="alct_trig_mode" type="unsigned short"/>
+      <tstore:column name="alct_zero_suppress" type="unsigned short"/>
+      <tstore:column name="chamber_type" type="string"/>
+      <tstore:column name="emu_config_id" type="unsigned int 64"/>
+      <tstore:column name="tmb_config_id" type="unsigned int 64"/>
+      <tstore:foreignkey references="EMU_TMB">
+        <tstore:keycolumn column="tmb_config_id" references="tmb_config_id"/>
+      </tstore:foreignkey>
+      <tstore:foreignkey references="EMU_Configuration">
+        <tstore:keycolumn column="emu_config_id" references="emu_config_id"/>
+      </tstore:foreignkey>
+    </tstore:table>
+
+    <tstore:table key="afeb_config_id" name="EMU_AnodeChannel">
+      <tstore:column name="afeb_config_id" type="unsigned int 64"/>
+      <tstore:column name="afeb_fine_delay" type="unsigned short"/>
+      <tstore:column name="afeb_number" type="unsigned short"/>
+      <tstore:column name="afeb_threshold" type="unsigned short"/>
+      <tstore:column name="alct_config_id" type="unsigned int 64"/>
+      <tstore:column name="emu_config_id" type="unsigned int 64"/>
+      <tstore:foreignkey references="EMU_ALCT">
+        <tstore:keycolumn column="alct_config_id" references="alct_config_id"/>
+      </tstore:foreignkey>
+      <tstore:foreignkey references="EMU_Configuration">
+        <tstore:keycolumn column="emu_config_id" references="emu_config_id"/>
+      </tstore:foreignkey>
+    </tstore:table>
+
+    <tstore:table name="EMU_FLASH_WRITE" key="write_date">
+      <tstore:column name="write_date" type="time"/>
+      <tstore:column name="config_id" type="unsigned int 64"/>
+    </tstore:table>
+
+  </tstore:view>
+
+</tstore:configuration>

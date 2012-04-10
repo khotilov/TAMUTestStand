@@ -1,0 +1,124 @@
+/*
+ * $Id: $
+ */
+
+// class header
+#include "emu/pc/CCBCommands.h"
+
+// Emu includes
+#include "emu/pc/CCB.h"
+#include "emu/pc/ResultRegisterSerializer.h"
+
+// system includes
+#include <iostream>
+#include <sstream>
+#include <iomanip>
+#include <bitset>
+#include <unistd.h> // for sleep()
+
+
+namespace emu {  namespace pc {
+
+using std::endl;
+using std::cout;
+using std::string;
+using std::hex;
+using std::dec;
+
+
+bool is25nsPulseCommand(const int command)
+{
+  switch(command)
+  {
+    case CCB_VME_BC0:
+    case CCB_VME_L1ACC:
+    case CCB_VME_SOFT_RESET:
+    case CCB_VME_TMB_SOFT_RESET:
+    case CCB_VME_CLCT_EXT_TRIGGER:
+    case CCB_VME_ALCT_EXT_TRIGGER:
+    case CCB_VME_DMB_CFEB_CALIB0:
+    case CCB_VME_DMB_CFEB_CALIB1:
+    case CCB_VME_DMB_CFEB_CALIB2:
+      return true;
+  }
+  return false;
+}
+
+
+bool is50nsPulseCommand(const int command)
+{
+  switch(command)
+  {
+    case CCB_VME_ALCT_HARD_RESET:
+    case CCB_VME_ALCT_ADB_PULSE_SYNC:
+      return true;
+  }
+  return false;
+}
+
+
+bool isFinitePulseCommand(const int command)
+{
+  if (is25nsPulseCommand(command)) return true;
+  if (is500nsPulseCommand(command)) return true;
+
+  switch(command)
+  {
+    case CCB_VME_ALCT_ADB_PULSE_ASYNC: // ??? ns
+      return true;
+  }
+  return false;
+}
+
+
+void SetFPGAMode(CCB *ccb)
+{
+  ccb->WriteRegister(CCB_CSRA1, 0x00); // CSRA1
+  ccb->WriteRegister(CCB_CSRA2_STATUS, 0xDEED); // CSRB1
+}
+
+
+void NTimesWriteRegister(CCB* ccb, int n, int reg, int value)
+{
+  for (int i = 0; i < n; ++i)
+  {
+    ccb->WriteRegister(reg, value);
+    usleep(50);
+  }
+}
+
+
+void Write5ReservedBits(CCB* ccb, int &value)
+{
+  // make sure the value we a writing is 5 bits wide!
+  value &= 0x1F;
+
+  // read the register contents first
+  int reg = ccb->ReadRegister(CCB_CSRB6);
+  // clear the DMB_reserved_out bits [14:10]:
+  reg &= ~(0x1F << 10);
+  // set the DMB_reserved_out bits [14:10] to given value
+  reg |= (value << 10);
+
+  // write
+  ccb->WriteRegister(CCB_CSRB6, reg);
+}
+
+
+int Read5ReservedBits(CCB* ccb)
+{
+  // read from TMB_reserved_in bits [7:3]:
+  int reg = ccb->ReadRegister(CCB_CSRB11);
+  return ( reg >> 3) & 0x1F;
+}
+
+
+int LoadAndReadResutRegister(CCB* ccb, int tmb_slot, int load_command)
+{
+  ccb->WriteRegister(CCB_CSRB2_COMMAND_BUS, load_command);
+  ResultRegisterSerializer reader(ccb, tmb_slot);
+  return reader.read();
+}
+
+
+}} // namespaces

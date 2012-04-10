@@ -1,0 +1,5 @@
+# kill all running xdaqs
+killall -q -s KILL  /opt/xdaq/bin/xdaq.exe
+
+# start DB config process
+$HOME/TriDAS/emu/emuDCS/TAMUTestStand/scripts/start_test.sh

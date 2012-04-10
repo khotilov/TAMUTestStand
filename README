@@ -1,0 +1,6 @@
+Software for testing of the new Trigger Motherboard for CMS Muond Endcap at TAMU.
+
+Dependencies:
+
+XDAQ
+EMULIB

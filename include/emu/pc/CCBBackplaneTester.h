@@ -1,0 +1,102 @@
+#ifndef emu_pc_CCBBackplaneTester_h
+#define emu_pc_CCBBackplaneTester_h
+
+#include <iostream>
+#include <stdio.h>
+#include <string>
+#include <vector>
+#include <map>
+#include <boost/function.hpp>
+
+namespace emu { namespace pc {
+
+class TMB;
+class CCB;
+
+
+/** class CCBBackplaneTester
+ *
+ * Runs actual test units for TMB-CCB testing using backplane.
+ *
+ * \author Vadim Khotilovich
+ */
+class CCBBackplaneTester
+{
+public:
+
+  // not responsible for deleting pointers
+  CCBBackplaneTester();
+
+  virtual ~CCBBackplaneTester();
+
+  /// Allows to set the results output destination.
+  /// Initially, the results output is set to std::cout in the constructor.
+  void RedirectOutput(std::ostream * output) { out_ = output ; }
+
+  void SetTMB(TMB * tmb) {tmb_ = tmb;}
+  void SetCCB(CCB * ccb) {ccb_ = ccb;}
+
+  /// returns labels of available registered tests
+  std::vector<std::string> GetTestLabels();
+
+  /** Getter for the result of a test with specific label.
+   * The results are first initialized to -1 in the constructor.
+   * Running the tests through RunTest would be setting
+   * result values to either 0 (not pass) or 1 (pass).
+   */
+  int GetTestResult(const std::string &test);
+
+  /// setter for the result of a test with specific label
+  void SetTestResult(const std::string &test, int result);
+
+  /// run test with specific label
+  void RunTest(const std::string &test);
+
+  /// issue HardReset
+  void Reset();
+
+private:
+
+  /// TestProcedure is a type for a pointer to a test procedure
+  typedef boost::function<bool ()> TestProcedure;
+
+  /// register a new test procedure with a given label
+  void RegisterTest(const std::string &test, TestProcedure proc);
+
+  // actual test procedures
+
+  /// run all tests
+  bool TestAll();
+
+  /// dummy test
+  bool TestDummy() {return true;}
+
+  /**
+   *
+   */
+  bool TestPulseCountersBits();
+
+  /**
+   *
+   */
+  bool TestCommandBus();
+
+
+  // holds CCB and TMB pointers
+  CCB * ccb_;
+  TMB * tmb_;
+
+  /// where to store the results output
+  std::ostream * out_ ;
+
+  /// test label -> test procedure association
+  std::map<std::string, TestProcedure> testProcedures_ ;
+
+  /// test label -> test result association
+  std::map<std::string, int> testResults_ ;
+};
+
+
+}} // namespaces
+
+#endif

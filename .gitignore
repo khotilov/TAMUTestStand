@@ -1,0 +1,18 @@
+*~
+*.pyc
+*.root
+*.pdf
+*.eps
+*.ps
+*.log*
+
+# directories
+
+CVS
+.svn
+/bin/
+/lib/
+x86_64_slc5/
+x86_slc4/
+linux/
+tmp/

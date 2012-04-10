@@ -1,0 +1,40 @@
+<?xml version='1.0'?>
+<xc:Partition xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	      xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/"
+	      xmlns:xc="http://xdaq.web.cern.ch/xdaq/xsd/2004/XMLConfiguration-30">
+
+    <xc:Context url="http://localhost:20012">
+    
+        <xc:Application class="emu::pc::EmuPeripheralCrateConfig" id="70" instance="0" network="local">
+    	    <properties xmlns="urn:xdaq-application:EmuPeripheralCrateConfig" xsi:type="soapenc:Struct">
+                <Standalone xsi:type="xsd:string">true</Standalone>
+                <XMLorDB xsi:type="xsd:string">xml</XMLorDB>
+                <EmuConfigurationID xsi:type="xsd:string">1000001</EmuConfigurationID>
+                <xmlFileName xsi:type="xsd:string">/home/cscdev/TriDAS/emu/emuDCS/TAMUTestStand/xml/tamu_crate_config.xml</xmlFileName>
+                <!--<xmlFileName xsi:type="xsd:string">/home/cscdev/TriDAS/run/ME-1101_from1000126.xml</xmlFileName>-->
+            </properties>
+        </xc:Application>
+
+        <xc:Application class="emu::pc::TAMUTestApplication" id="80" instance="0" network="local">
+    	    <properties xmlns="urn:xdaq-application:TAMUTestApplication" xsi:type="soapenc:Struct">
+        	<XMLFileName xsi:type="xsd:string">/home/cscdev/TriDAS/emu/emuDCS/TAMUTestStand/xml/tamu_crate_config.xml</XMLFileName>
+        	<TStoreFileName xsi:type="xsd:string">/home/cscdev/TriDAS/emu/emuDCS/TAMUTestStand/xml/tstore.view</TStoreFileName>
+            </properties>
+        </xc:Application>
+
+        <xc:Module>/opt/xdaq/lib/libxdaq2rc.so</xc:Module>
+        <xc:Module>/opt/xdaq/lib/libtstoreclient.so</xc:Module>
+        <xc:Module>/opt/xdaq/lib/libxalanMsg.so</xc:Module>
+        <xc:Module>/opt/xdaq/lib/libxalan-c.so</xc:Module>
+        <xc:Module>$HOME/TriDAS/emu/base/lib/linux/$XDAQ_PLATFORM/libemubase.so</xc:Module>
+        <xc:Module>$HOME/TriDAS/emu/soap/lib/linux/$XDAQ_PLATFORM/libemusoap.so</xc:Module>
+        <xc:Module>$HOME/TriDAS/emu/emuDCS/PeripheralCore/lib/linux/$XDAQ_PLATFORM/libEmuPeripheralCore.so</xc:Module>
+        <xc:Module>$HOME/TriDAS/emu/emuDCS/OnlineDB/lib/linux/$XDAQ_PLATFORM/libEmuOnlineDB.so</xc:Module>
+        <xc:Module>$HOME/TriDAS/emu/emuDCS/PeripheralApps/lib/linux/$XDAQ_PLATFORM/libEmuPeripheralApps.so</xc:Module>
+        <xc:Module>$HOME/TriDAS/emu/emuDCS/TAMUTestStand/lib/linux/$XDAQ_PLATFORM/libEmuTAMUTestStand.so</xc:Module>
+
+    </xc:Context>
+
+</xc:Partition>
+
+<!-- vim: set sw=2 ts=2: -->
