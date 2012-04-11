@@ -42,11 +42,12 @@ using std::dec;
 CCBBackplaneTester::CCBBackplaneTester()
 : ccb_(0)
 , tmb_(0)
-, out_(&std::cout)
+, out_(&cout)
 {
-  RegisterTest("All", boost::bind( &CCBBackplaneTester::TestAll, this));
-  RegisterTest("Dummy", boost::bind( &CCBBackplaneTester::TestDummy, this));
-  RegisterTest("PulseCountersBits", boost::bind( &CCBBackplaneTester::TestPulseCountersBits, this));
+  RegisterTheTest("All", boost::bind( &CCBBackplaneTester::TestAll, this));
+  RegisterTheTest("Dummy", boost::bind( &CCBBackplaneTester::TestDummy, this));
+  RegisterTheTest("PulseCountersBits", boost::bind( &CCBBackplaneTester::TestPulseCountersBits, this));
+  RegisterTheTest("CommandBus", boost::bind( &CCBBackplaneTester::TestCommandBus, this));
 
 }
 
@@ -55,17 +56,17 @@ CCBBackplaneTester::~CCBBackplaneTester(){}
 
 
 
-void CCBBackplaneTester::RegisterTest(const std::string &test, TestProcedure proc)
+void CCBBackplaneTester::RegisterTheTest(const std::string &test, TestProcedure proc)
 {
   if (testProcedures_.find(test) != testProcedures_.end())
   {
-    cout<<__func__<<": WARNING: test with label "<<test<<" was already registered. It will be redefined."<<endl;
+    cout << __func__ << ": WARNING: test with label " << test << " was already registered. It will be redefined." << endl;
   }
 
   testProcedures_[test] = proc;
   testResults_[test] = -1;
 
-  cout<<"Registerd CCBBackplane test "<<test<<endl;
+  cout << "Registered CCBBackplane test: " << test << endl;
 }
 
 
@@ -78,7 +79,7 @@ void CCBBackplaneTester::Reset()
   }
   else
   {
-    (*out_) << "No CCB defined" << endl;
+    (*out_) << "No CCB defined!" << endl;
   }
 }
 
@@ -136,7 +137,7 @@ bool CCBBackplaneTester::TestAll()
 
   Reset();
 
-  bool AllOK = true;
+  bool result = true;
 
   for (std::map<std::string, TestProcedure>::iterator iproc = testProcedures_.begin(); iproc != testProcedures_.end(); ++iproc)
   {
@@ -149,16 +150,16 @@ bool CCBBackplaneTester::TestAll()
 
     testResults_[test] = test_result;
 
-    AllOK &= test_result;
+    result &= test_result;
 
-    // give it a little break
+    // give it a little break before the next test
     usleep(50);
   }
 
   (*out_) << "------------------------------" << endl;
-  MessageOK(out_, "CCBBackplaneTester: All tests result .... ", AllOK);
+  MessageOK(out_, "CCBBackplaneTester: All tests result .... ", result);
 
-  return AllOK;
+  return result;
 }
 
 
@@ -173,7 +174,7 @@ bool CCBBackplaneTester::TestPulseCountersBits()
   int Niter = 1000;
 
   // walk through the pulse counter flags bits
-  for (int ibit = 0; ibit < LENGTH_PULSE_IN_COMMANDS; ibit++)
+  for (int ibit = 0; ibit < LENGTH_PULSE_IN_COMMANDS; ++ibit)
   {
     const int command = PULSE_IN_COMMANDS[ibit];
 
@@ -195,6 +196,7 @@ bool CCBBackplaneTester::TestPulseCountersBits()
     }
   }
 
+  MessageOK(out_, "CCBBackplaneTester: PulseCountersBits .... ", result);
   return result;
 }
 
@@ -203,6 +205,43 @@ bool CCBBackplaneTester::TestCommandBus()
 {
   bool result = true;
 
+  int Niter = 1000;
+
+  // walk over the range of values of the CSRB2 register
+  for (int reg = 0; reg < 256; ++reg)
+  {
+    // skip some reserved values
+    int command_bus = reg & ~(0x03);
+    if (command_bus == 0x10 || // hard reset
+        command_bus == 0x3C || // hard reset CCB
+        command_bus == 0x40 || // hard reset TMB
+        command_bus == 0x0C || // L1Reset
+        reg == 0xCC // dedicated custom command
+    )
+      continue;
+
+
+    for (int i=0; i<Niter; ++i)
+    {
+      // write command
+      ccb_->WriteRegister(CCB_CSRB2_COMMAND_BUS, reg);
+
+      // load result register with the total pulse counter and read the value
+      int rr = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTER);
+
+      // extract command bits
+      int command_code = ResutRegisterCommand(rr);
+      //int pulse_counter = ResutRegisterData(rr);
+
+      // compare the read out command code to the value written into the CSRB2 register
+      result &= CompareValues(out_, "CommandBus", command_code, reg, true);
+    }
+
+    // issue L1Reset to reset the counters
+    ccb_->WriteRegister(CCB_VME_L1RESET, 1);
+  }
+
+  MessageOK(out_, "CCBBackplaneTester: CommandBus .... ", result);
   return result;
 }
 

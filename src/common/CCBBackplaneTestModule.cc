@@ -14,6 +14,7 @@
 #include "emu/pc/CCB.h"
 #include "emu/pc/RAT.h"
 #include "emu/utils/Cgi.h"
+#include "emu/utils/System.h"
 #include "emu/exception/Exception.h"
 
 // XDAQ includes
@@ -114,7 +115,7 @@ void CCBBackplaneTestModule::CCBBackplaneTestsPage(xgi::Input * in, xgi::Output 
   *out << tr().set("ALIGN","center");
 
   TestButton(tmb, "Pulse Counter Bits", "PulseCountersBits", out);
-  TestButton(tmb, "Dummy", "Dummy", out);
+  TestButton(tmb, "Command Bus", "CommandBus", out);
   TestButton(tmb, "Dummy", "Dummy", out);
 
   *out << tr();
@@ -145,7 +146,7 @@ void CCBBackplaneTestModule::CCBBackplaneTestsPage(xgi::Input * in, xgi::Output 
 
   *out << form().set("method", "GET").set("action", "/" + urn + "/CCBBackplaneLogTestsOutput" ) << endl;
   *out << input().set("type", "hidden").set("value", tmbStr).set("name", "tmb");
-  *out << input().set("type", "submit").set("value", "Log output").set("name", "LogTestsOutput") << endl;
+  *out << input().set("type", "submit").set("value", "Save log output").set("name", "LogTestsOutput") << endl;
   *out << input().set("type", "submit").set("value", "Clear").set("name", "ClearTestsOutput") << endl;
   *out << form() << endl;
 
@@ -248,17 +249,22 @@ void CCBBackplaneTestModule::CCBBackplaneLogTestsOutput(xgi::Input * in, xgi::Ou
     return;
   }
 
-  char buf[20];
-  sprintf(buf, "/tmp/TMBTestsLogFile_%d.log", sys_->tmbs()[tmb]->slot());
+  string tmb_slot = toolbox::toString("%d", sys_->tmbs()[tmb]->slot());
+  string file_name = "CCBBackplaneTests_TMBslot" + tmb_slot + "_" + emu::utils::getDateTime(true) + ".log";
+  emu::utils::saveAsFileDialog(out, testOutputs_[tmb].str(), file_name);
 
+  /*
+  char file_name[20];
+  sprintf(file_name, "/tmp/TMBTestsLogFile_%d.log", sys_->tmbs()[tmb]->slot());
   std::ofstream log_file;
-  log_file.open(buf);
+  log_file.open(file_name);
   log_file << testOutputs_[tmb].str();
   log_file.close();
 
   testOutputs_[tmb].str("");
 
   CCBBackplaneTestsPage(in, out);
+  */
 }
 
 

@@ -92,6 +92,11 @@ int Read5ReservedBits(CCB* ccb);
 /// load TMB result register using load_command, and read in the value
 int LoadAndReadResutRegister(CCB* ccb, int tmb_slot, int load_command);
 
+/// extract command code from TMB result register value
+int ResutRegisterCommand(int rr);
+
+/// extract the data from TMB result register value
+int ResutRegisterData(int rr);
 
 }} // namespaces
 

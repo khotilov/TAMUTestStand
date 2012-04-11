@@ -13,6 +13,7 @@
 #include "emu/pc/CCB.h"
 #include "emu/pc/RAT.h"
 #include "emu/utils/Cgi.h"
+#include "emu/utils/System.h"
 
 // XDAQ includes
 #include "cgicc/Cgicc.h"
@@ -192,7 +193,7 @@ void TMBTestModule::TMBTestsPage(xgi::Input * in, xgi::Output * out )
 
   *out << form().set("method", "GET").set("action", "/" + urn + "/TMBLogTestsOutput" ) << endl;
   *out << input().set("type", "hidden").set("value", tmbStr).set("name", "tmb");
-  *out << input().set("type", "submit").set("value", "Log output").set("name", "LogTestsOutput") << endl;
+  *out << input().set("type", "submit").set("value", "Save log output").set("name", "LogTestsOutput") << endl;
   *out << input().set("type", "submit").set("value", "Clear").set("name", "ClearTestsOutput") << endl;
   *out << form() << endl;
 
@@ -357,6 +358,11 @@ void TMBTestModule::TMBLogTestsOutput(xgi::Input * in, xgi::Output * out )
     return;
   }
 
+  string tmb_slot = toolbox::toString("%d", sys_->tmbs()[tmb]->slot());
+  string file_name = "TMBTests_slot" + tmb_slot + "_" + emu::utils::getDateTime(true) + ".log";
+  emu::utils::saveAsFileDialog(out, testOutputs_[tmb][sys_->crateN()].str(), file_name);
+
+  /*
   char buf[20];
   sprintf(buf, "/tmp/TMBTestsLogFile_%d.log", sys_->tmbs()[tmb]->slot());
 
@@ -368,6 +374,7 @@ void TMBTestModule::TMBLogTestsOutput(xgi::Input * in, xgi::Output * out )
   testOutputs_[tmb][sys_->crateN()].str("");
 
   TMBTestsPage(in, out);
+  */
 }
 
 

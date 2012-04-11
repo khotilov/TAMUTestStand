@@ -121,4 +121,17 @@ int LoadAndReadResutRegister(CCB* ccb, int tmb_slot, int load_command)
 }
 
 
+int ResutRegisterCommand(int rr)
+{
+  // currently, it's first 8 bits
+  return rr & 0xFF;
+}
+
+int ResutRegisterData(int rr)
+{
+  // currently, it's 12 bits [19:8]
+  return ( rr >> 8 ) & 0xFFF;
+}
+
+
 }} // namespaces

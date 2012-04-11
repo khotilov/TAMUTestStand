@@ -61,7 +61,7 @@ private:
   typedef boost::function<bool ()> TestProcedure;
 
   /// register a new test procedure with a given label
-  void RegisterTest(const std::string &test, TestProcedure proc);
+  void RegisterTheTest(const std::string &test, TestProcedure proc);
 
   // actual test procedures
 
@@ -72,12 +72,15 @@ private:
   bool TestDummy() {return true;}
 
   /**
-   *
+   * Send various pulse triggering commands through VMS interface and
+   * check that for each command only this command's fit blag is set
+   * in the pulse counter flags register.
    */
   bool TestPulseCountersBits();
 
   /**
-   *
+   * Write various values into CSRB2 (command bus),
+   * read back through TMB's result register, and compare
    */
   bool TestCommandBus();
 

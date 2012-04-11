@@ -6,7 +6,6 @@
 #include "emu/pc/TAMUTestApplication.h"
 
 // Emu includes
-#include "emu/utils/Method.h"
 #include "emu/utils/Cgi.h"
 #include "emu/utils/System.h"
 #include "emu/pc/Crate.h"
@@ -497,10 +496,16 @@ void TAMUTestApplication::LogOutput(xgi::Input * in, xgi::Output * out)
     }
   }
 
-  logFile.close();
-
   teststand_.SetCurrentCrate(initial_crate);
   teststand_.SetCurrentTMB(initial_tmb);
+
+  for (unsigned t = 0; t < teststand_.tmbs().size(); t++)
+  {
+    logFile << ccbBackplaneTestModule_.getTestOutput(t).str();
+  }
+
+  logFile.close();
+
 
   tmbTestModule_.Init();
   ccbBackplaneTestModule_.Init();
