@@ -57,7 +57,7 @@ public:
 
 private:
 
-  /// TestProcedure is a type for a pointer to a test procedure
+  /// test procedure should have this type: no parameters, returns bool
   typedef boost::function<bool ()> TestProcedure;
 
   /// register a new test procedure with a given label

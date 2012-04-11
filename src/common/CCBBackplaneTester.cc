@@ -178,7 +178,7 @@ bool CCBBackplaneTester::TestPulseCountersBits()
   {
     const int command = PULSE_IN_COMMANDS[ibit];
 
-    int counter_bit = (1 << ibit);
+    int counter_flag = (1 << ibit);
 
     // reset
 
@@ -187,13 +187,23 @@ bool CCBBackplaneTester::TestPulseCountersBits()
     {
       // Niter times write anything (it doesn't matter what for pulse commands)
       NTimesWriteRegister(ccb_, Niter, command, 1);
-
-      // read pulse counter flags from TMB RR:
-      int counter_bits_read = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTERS_FLAG);
-
-      // fail the test if not equal
-      result &= CompareValues(out_, "PulseCountersBits", counter_bits_read, counter_bit, true);
     }
+    if (command == CCB_VME_TMB_RESERVED0)
+    {
+      // set this bit on and off a number of times
+      for (int i=0; i<Niter; ++i)
+      {
+        WriteTMBReserved0Bit(ccb_, 1); // on
+        usleep(50);
+        WriteTMBReserved0Bit(ccb_, 0); // off
+      }
+    }
+
+    // read pulse counter flags from TMB RR:
+    int counter_flags_read = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTERS_FLAG);
+
+    // fail the test if not equal
+    result &= CompareValues(out_, "PulseCountersBits", counter_flags_read, counter_flag, true);
   }
 
   MessageOK(out_, "CCBBackplaneTester: PulseCountersBits .... ", result);

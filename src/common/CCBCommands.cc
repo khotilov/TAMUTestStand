@@ -113,6 +113,23 @@ int Read5ReservedBits(CCB* ccb)
 }
 
 
+void WriteTMBReserved0Bit(CCB* ccb, int value)
+{
+  // make sure the value we are writing is 0 or 1!
+  value = ((value==0) ? 0 : 1);
+
+  // read the register contents first
+  int reg = ccb->ReadRegister(CCB_CSRB6);
+  // clear the TMB_reserved0 bit [2]:
+  reg &= ~(0x4);
+  // set the TMB_reserved bit [2] to given value
+  reg |= (value << 2);
+
+  // write
+  ccb->WriteRegister(CCB_CSRB6, reg);
+}
+
+
 int LoadAndReadResutRegister(CCB* ccb, int tmb_slot, int load_command)
 {
   ccb->WriteRegister(CCB_CSRB2_COMMAND_BUS, load_command);

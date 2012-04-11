@@ -352,7 +352,7 @@ void CCBBackplaneUtilsModule::RunBackplaneCommand(xgi::Input * in, xgi::Output *
       }
 
       // write bit #2 to CSRB6
-      ccb->WriteRegister(CCB_CSRB6, ( TMBReservedBit_ == 0 ) ? 0 : 4 );
+      WriteTMBReserved0Bit(ccb, (TMBReservedBit_ == 0 ) ? 0 : 4 );
     }
 
 

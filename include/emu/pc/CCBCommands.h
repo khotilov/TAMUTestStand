@@ -89,6 +89,9 @@ void Write5ReservedBits(CCB* ccb, int &value);
 /// read five TMB_reserved_in bits
 int Read5ReservedBits(CCB* ccb);
 
+/// Write TMB_reserved0 bit
+void WriteTMBReserved0Bit(CCB* ccb, int value);
+
 /// load TMB result register using load_command, and read in the value
 int LoadAndReadResutRegister(CCB* ccb, int tmb_slot, int load_command);
 
