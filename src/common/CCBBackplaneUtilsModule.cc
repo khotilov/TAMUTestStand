@@ -170,7 +170,7 @@ void CCBBackplaneUtilsModule::BackplaneTestsBlock(xgi::Input * in, xgi::Output *
   *out << "Value to write (hex 0-1F): " << endl;
   sprintf(buf, "%02X", Reserved5BitsWrite_);
   *out << input().set("type", "text").set("style", "width:2em").set("maxlength", "2").set("value", buf).set("name", "write_5bits") << endl;
-  *out << input().set("type", "submit").set("name", "command").set("value", "Write&Read Reserved Bits") << endl;
+  *out << input().set("type", "submit").set("name", "command").set("value", "Write-Read Reserved Bits") << endl;
   // only write out if they were requested:
   if (Reserved5Bits_ >= 0)
   {
@@ -327,7 +327,7 @@ void CCBBackplaneUtilsModule::RunBackplaneCommand(xgi::Input * in, xgi::Output *
       // custom command through CSRB2: load CCB rx0 counter into TMB result register
       ccb->WriteRegister(CCB_CSRB2_COMMAND_BUS, CCB_COM_RR_LOAD_CCB_RX0);
     }
-    else if (command == "Write&Read Reserved Bits")
+    else if (command == "Write-Read Reserved Bits")
     {
       // Write 5 DMB_reserved_out bits and read them back through TMB_reserved_in
       if (cgi.getElement("write_5bits") != cgi.getElements().end())

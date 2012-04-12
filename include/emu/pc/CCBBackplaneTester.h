@@ -27,10 +27,16 @@ public:
   // not responsible for deleting pointers
   CCBBackplaneTester();
 
+  /// copy c-tor (allows, e.g., storing objects of this class properly in std::vectors etc.)
+  CCBBackplaneTester(const CCBBackplaneTester &);
+
   virtual ~CCBBackplaneTester();
 
+  /// custom assignment operator is also needed
+  CCBBackplaneTester & operator=(const CCBBackplaneTester &);
+
   /// Allows to set the results output destination.
-  /// Initially, the results output is set to std::cout in the constructor.
+  /// Initially, the internal out_ output is set to std::cout in the constructor.
   void RedirectOutput(std::ostream * output) { out_ = output ; }
 
   void SetTMB(TMB * tmb) {tmb_ = tmb;}
@@ -57,8 +63,14 @@ public:
 
 private:
 
+  /// helper copying method for internal use by the copy c-tor and the assignment operator
+  void CopyFrom(const CCBBackplaneTester &other);
+
   /// test procedure should have this type: no parameters, returns bool
   typedef boost::function<bool ()> TestProcedure;
+
+  /// register all the test procedures
+  void RegisterTestProcedures();
 
   /// register a new test procedure with a given label
   void RegisterTheTest(const std::string &test, TestProcedure proc);

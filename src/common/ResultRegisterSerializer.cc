@@ -9,6 +9,7 @@
 #include "emu/pc/CCBCommands.h"
 #include "emu/pc/CCB.h"
 #include "emu/exception/Exception.h"
+#include "emu/utils/SimpleTimer.h"
 
 // XDAQ includes
 #include "cgicc/Cgicc.h"
@@ -57,6 +58,8 @@ unsigned long long int ResultRegisterSerializer::read(int length)
   using std::hex;
   using std::dec;
 
+  emu::utils::SimpleTimer timer;
+
   unsigned long long int result = 0;
 
   cout << "--- ResultRegisterSerializer::read ---" << endl;
@@ -103,6 +106,8 @@ unsigned long long int ResultRegisterSerializer::read(int length)
       ++counter;
     }
   }
+
+  cout<<"ResultRegisterSerializer::read[msec] "<<timer.sec()*1000.<<endl;
 
   return result;
 }

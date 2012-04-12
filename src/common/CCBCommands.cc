@@ -45,7 +45,7 @@ bool is25nsPulseCommand(const int command)
 }
 
 
-bool is50nsPulseCommand(const int command)
+bool is500nsPulseCommand(const int command)
 {
   switch(command)
   {
@@ -144,7 +144,7 @@ int ResutRegisterCommand(int rr)
   return rr & 0xFF;
 }
 
-int ResutRegisterData(int rr)
+int ResultRegisterData(int rr)
 {
   // currently, it's 12 bits [19:8]
   return ( rr >> 8 ) & 0xFFF;

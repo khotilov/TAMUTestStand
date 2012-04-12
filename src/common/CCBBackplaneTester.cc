@@ -44,16 +44,52 @@ CCBBackplaneTester::CCBBackplaneTester()
 , tmb_(0)
 , out_(&cout)
 {
-  RegisterTheTest("All", boost::bind( &CCBBackplaneTester::TestAll, this));
-  RegisterTheTest("Dummy", boost::bind( &CCBBackplaneTester::TestDummy, this));
-  RegisterTheTest("PulseCountersBits", boost::bind( &CCBBackplaneTester::TestPulseCountersBits, this));
-  RegisterTheTest("CommandBus", boost::bind( &CCBBackplaneTester::TestCommandBus, this));
-
+  RegisterTestProcedures();
 }
 
 
 CCBBackplaneTester::~CCBBackplaneTester(){}
 
+
+CCBBackplaneTester::CCBBackplaneTester(const CCBBackplaneTester &other)
+{
+  CopyFrom(other);
+}
+
+
+CCBBackplaneTester & CCBBackplaneTester::operator=(const CCBBackplaneTester &rhs)
+{
+  // use copy constructor to create a temporary that may potentially throw
+  const CCBBackplaneTester temp(rhs);
+
+  // safely "commit" the work to this object, using a non-throwing CopyFrom operation
+  CopyFrom(temp);
+  return *this;
+}
+
+
+void CCBBackplaneTester::CopyFrom(const CCBBackplaneTester &other)
+{
+  ccb_ = other.ccb_;
+  tmb_ = other.tmb_;
+
+  out_ = other.out_;
+
+  // the real need for the user defined copy c-tor and assignment comes from here:
+  // we need to make sure that the test procedures are properly bound to this object.
+  RegisterTestProcedures();
+
+  testResults_  = other.testResults_;
+}
+
+
+void CCBBackplaneTester::RegisterTestProcedures()
+{
+  RegisterTheTest("All", boost::bind( &CCBBackplaneTester::TestAll, this));
+  RegisterTheTest("Dummy", boost::bind( &CCBBackplaneTester::TestDummy, this));
+  RegisterTheTest("PulseCountersBits", boost::bind( &CCBBackplaneTester::TestPulseCountersBits, this));
+  RegisterTheTest("CommandBus", boost::bind( &CCBBackplaneTester::TestCommandBus, this));
+}
 
 
 void CCBBackplaneTester::RegisterTheTest(const std::string &test, TestProcedure proc)
@@ -171,7 +207,7 @@ bool CCBBackplaneTester::TestPulseCountersBits()
 {
   bool result = true;
 
-  int Niter = 1000;
+  int Niter = 100;
 
   // walk through the pulse counter flags bits
   for (int ibit = 0; ibit < LENGTH_PULSE_IN_COMMANDS; ++ibit)
@@ -179,6 +215,8 @@ bool CCBBackplaneTester::TestPulseCountersBits()
     const int command = PULSE_IN_COMMANDS[ibit];
 
     int counter_flag = (1 << ibit);
+
+    cout<<__func__<<" command & flag "<<hex<<command<< " "<<counter_flag<<dec<<endl;
 
     // reset
 
@@ -201,10 +239,13 @@ bool CCBBackplaneTester::TestPulseCountersBits()
 
     // read pulse counter flags from TMB RR:
     int counter_flags_read = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTERS_FLAG);
+    cout<<"__func__"<<" flags write/read "<<(counter_flags_read==counter_flag? "OK ": "BAD ")  << counter_flag<<" "<< counter_flags_read<<endl;
 
     // fail the test if not equal
     result &= CompareValues(out_, "PulseCountersBits", counter_flags_read, counter_flag, true);
   }
+
+  cout<<__func__<<" result "<<result<<endl;
 
   MessageOK(out_, "CCBBackplaneTester: PulseCountersBits .... ", result);
   return result;
@@ -215,7 +256,7 @@ bool CCBBackplaneTester::TestCommandBus()
 {
   bool result = true;
 
-  int Niter = 1000;
+  int Niter = 30;
 
   // walk over the range of values of the CSRB2 register
   for (int reg = 0; reg < 256; ++reg)
@@ -230,6 +271,7 @@ bool CCBBackplaneTester::TestCommandBus()
     )
       continue;
 
+    cout<<endl<<__func__<<" testing CSRB2 "<<hex<<reg<<endl<<endl;
 
     for (int i=0; i<Niter; ++i)
     {
@@ -243,6 +285,8 @@ bool CCBBackplaneTester::TestCommandBus()
       int command_code = ResutRegisterCommand(rr);
       //int pulse_counter = ResutRegisterData(rr);
 
+      cout<<__func__<<" write/read "<<(command_code==reg? "OK ": "BAD ")<<" = "<<reg<<" / "<<command_code<<endl;
+
       // compare the read out command code to the value written into the CSRB2 register
       result &= CompareValues(out_, "CommandBus", command_code, reg, true);
     }
@@ -250,6 +294,8 @@ bool CCBBackplaneTester::TestCommandBus()
     // issue L1Reset to reset the counters
     ccb_->WriteRegister(CCB_VME_L1RESET, 1);
   }
+
+  cout<<__func__<<" result "<<result<<endl;
 
   MessageOK(out_, "CCBBackplaneTester: CommandBus .... ", result);
   return result;

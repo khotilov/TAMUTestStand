@@ -99,7 +99,7 @@ int LoadAndReadResutRegister(CCB* ccb, int tmb_slot, int load_command);
 int ResutRegisterCommand(int rr);
 
 /// extract the data from TMB result register value
-int ResutRegisterData(int rr);
+int ResultRegisterData(int rr);
 
 }} // namespaces
 
