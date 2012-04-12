@@ -207,7 +207,7 @@ bool CCBBackplaneTester::TestPulseCountersBits()
 {
   bool result = true;
 
-  int Niter = 100;
+  int Niter = 250;
 
   // walk through the pulse counter flags bits
   for (int ibit = 0; ibit < LENGTH_PULSE_IN_COMMANDS; ++ibit)
@@ -239,6 +239,8 @@ bool CCBBackplaneTester::TestPulseCountersBits()
 
     // read pulse counter flags from TMB RR:
     int counter_flags_read = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTERS_FLAG);
+    counter_flags_read = ResultRegisterData(counter_flags_read);
+
     cout<<"__func__"<<" flags write/read "<<(counter_flags_read==counter_flag? "OK ": "BAD ")  << counter_flag<<" "<< counter_flags_read<<endl;
 
     // fail the test if not equal
@@ -259,7 +261,7 @@ bool CCBBackplaneTester::TestCommandBus()
 {
   bool result = true;
 
-  int Niter = 30;
+  int Niter = 5;
 
   // walk over the range of values of the CSRB2 register
   for (int reg = 0; reg < 256; ++reg)
@@ -278,15 +280,11 @@ bool CCBBackplaneTester::TestCommandBus()
 
     for (int i=0; i<Niter; ++i)
     {
-      // write command
-      ccb_->WriteRegister(CCB_CSRB2_COMMAND_BUS, reg);
-
-      // load result register with the total pulse counter and read the value
-      int rr = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTER);
+      // load result register with the command code and read it back
+      int rr = LoadAndReadResutRegister(ccb_, tmb_->slot(), reg);
 
       // extract command bits
       int command_code = ResutRegisterCommand(rr);
-      //int pulse_counter = ResutRegisterData(rr);
 
       cout<<__func__<<" write/read "<<(command_code==reg? "OK ": "BAD ")<<" = "<<reg<<" / "<<command_code<<endl;
 
