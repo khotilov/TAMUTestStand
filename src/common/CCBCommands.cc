@@ -74,7 +74,7 @@ bool isFinitePulseCommand(const int command)
 void SetFPGAMode(CCB *ccb)
 {
   ccb->WriteRegister(CCB_CSRA1, 0x00); // CSRA1
-  ccb->WriteRegister(CCB_CSRA2_STATUS, 0xDEED); // CSRB1
+  ccb->WriteRegister(CCB_CSRB1, 0xDEED); // CSRB1
 }
 
 
