@@ -220,8 +220,8 @@ bool CCBBackplaneTester::TestPulseCountersBits()
 
     // reset
 
-    // for 25ns pulse commands
-    if (is25nsPulseCommand(command) || is500nsPulseCommand(command) )
+    // for finite pulse commands
+    if (isFinitePulseCommand(command))
     {
       // Niter times write anything (it doesn't matter what for pulse commands)
       NTimesWriteRegister(ccb_, Niter, command, 1);
@@ -243,6 +243,9 @@ bool CCBBackplaneTester::TestPulseCountersBits()
 
     // fail the test if not equal
     result &= CompareValues(out_, "PulseCountersBits", counter_flags_read, counter_flag, true);
+
+    // issue L1Reset to reset the counters
+    ccb_->WriteRegister(CCB_VME_L1RESET, 1);
   }
 
   cout<<__func__<<" result "<<result<<endl;
