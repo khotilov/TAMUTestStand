@@ -1,4 +1,5 @@
-Software for testing of the new Trigger Motherboard for CMS Muond Endcap at TAMU.
+Software for testing of the new Trigger Motherboard being developed at TAMU.
+The board is for the Muond Endcap detector upgrade at CMS experiment at CERN.
 
 
    * Dependencies:
@@ -13,11 +14,12 @@ emu/emuDCS/PeripheralCore
 emu/emuDCS/PeripheralApps
 emu/emuDCS/OnlineDB
 
-Itself, it is expected to be located at 
-emu/emuDCS/TAMUTestStand
+The EMULIB has to be installed into $HOME/TriDAS/emu
 
+
+The package is normally expected to live in the emu/emuDCS/TAMUTestStand location.
+However, it could be checked out into anywhere, but the application has to be launched from the TAMUTestStand/ location.
 
    * Checking out:
 
 git clone git://github.com/khotilov/TAMUTestStand.git
- 

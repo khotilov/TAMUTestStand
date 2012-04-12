@@ -91,7 +91,7 @@ TAMUTestApplication::TAMUTestApplication(xdaq::ApplicationStub * s)
   xmlFile_ = tstoreFile_ = "NOT_DEFINED.xml" ;
   this->getApplicationInfoSpace()->fireItemAvailable("XMLFileName", &xmlFile_);
   this->getApplicationInfoSpace()->fireItemAvailable("TStoreFileName", &tstoreFile_);
-  
+
   parsed_=0;
 }
 
@@ -99,6 +99,10 @@ TAMUTestApplication::TAMUTestApplication(xdaq::ApplicationStub * s)
 void TAMUTestApplication::Default(xgi::Input * in, xgi::Output * out ) throw (xgi::exception::Exception)
 {
   using cgicc::br;
+
+  // perform possible environment variable expansions in configuration file names:
+  xmlFile_.fromString(emu::utils::performExpansions(xmlFile_));
+  tstoreFile_.fromString(emu::utils::performExpansions(tstoreFile_));
 
   cout << "Name of Logger is " << getApplicationLogger().getName() <<endl;
   LOG4CPLUS_INFO(getApplicationLogger(), "EmuPeripheralCrate ready");
