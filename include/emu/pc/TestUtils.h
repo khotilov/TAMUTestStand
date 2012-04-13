@@ -16,10 +16,10 @@ namespace emu { namespace pc {
 /// Compare integer values
 /// test if "testval" is equivalent to the expected value: "compareval"
 /// return depends on if you wanted them to be "equal"
-bool CompareValues(std::ostream * out, const std::string &test, float testval, float compareval, float tolerance);
+bool CompareValues(std::ostream * out, const std::string &test, float testval, float compareval, float tolerance, bool print_pass = false);
 
 /// Compare float values with some tolerance
-bool CompareValues(std::ostream * out, const std::string &test, int testval, int compareval, bool equal);
+bool CompareValues(std::ostream * out, const std::string &test, int testval, int compareval, bool equal, bool print_pass = false);
 
 /// Formatted test result printout
 void MessageOK(std::ostream * out, const std::string &test, bool testbool);

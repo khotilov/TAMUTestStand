@@ -87,8 +87,9 @@ private:
    * Send various pulse triggering commands through VMS interface and
    * check that for each command only this command's fit blag is set
    * in the pulse counter flags register.
+   * Also check the counter values against expected  numbers.
    */
-  bool TestPulseCountersBits();
+  bool TestPulseCounters();
 
   /**
    * Write various values into CSRB2 (command bus),

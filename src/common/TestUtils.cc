@@ -23,10 +23,9 @@ bool CompareValues(std::ostream * out,
                    const std::string &test,
                    int testval,
                    int compareval,
-                   bool equal)
+                   bool equal,
+                   bool print_pass)
 {
-  (*out) << "CompareValues:  " << test << " -> ";
-
   string pass_relation = " == ";
   string fail_relation = " != ";
   if (!equal)
@@ -38,12 +37,15 @@ bool CompareValues(std::ostream * out,
   if ( (  equal && testval == compareval) ||
        ( !equal && testval != compareval) )
   {
-    (*out) << "PASS! " << test << " : " << hex << testval << pass_relation << compareval << dec << endl;
+    if(print_pass)
+    {
+      (*out) << "CompareValues:  " << test << " -> PASS! " << test << " : " << hex << testval << pass_relation << compareval << dec << endl;
+    }
     return true;
   }
   else
   {
-    (*out) << "FAIL! " << test << " : " << hex << testval << fail_relation << compareval << dec << endl;
+    (*out) << "CompareValues:  " << test << " -> FAIL! " << test << " : " << hex << testval << fail_relation << compareval << dec << endl;
     return false;
   }
 }
@@ -53,21 +55,23 @@ bool CompareValues(std::ostream * out,
                    const std::string &test,
                    float testval,
                    float compareval,
-                   float tolerance)
+                   float tolerance,
+		   bool print_pass)
 {
-  (*out) << "CompareValues tolerance:  " << test << " -> ";
-
   float err = (testval - compareval) / compareval;
   float fractolerance = tolerance * compareval;
 
   if (std::abs(err) > tolerance)
   {
-    (*out) << "FAIL! " << test << " : expected = " << compareval << ", returned = " << testval << " outside of tolerance " << fractolerance << endl;
+    (*out) << "CompareValues tolerance:  " << test << " -> FAIL! " << test << " : expected = " << compareval << ", returned = " << testval << " outside of tolerance " << fractolerance << endl;
     return false;
   }
   else
   {
-    (*out) << "PASS! " << test << " : value = " << testval << " within "<< fractolerance << " of " << compareval << endl;
+    if(print_pass)
+    {
+      (*out) << "CompareValues tolerance:  " << test << " -> PASS! " << test << " : value = " << testval << " within "<< fractolerance << " of " << compareval << endl;
+    }
     return true;
   }
 }

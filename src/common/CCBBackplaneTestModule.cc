@@ -114,7 +114,7 @@ void CCBBackplaneTestModule::CCBBackplaneTestsPage(xgi::Input * in, xgi::Output 
 
   *out << tr().set("ALIGN","center");
 
-  TestButton(tmb, "Pulse Counter Bits", "PulseCountersBits", out);
+  TestButton(tmb, "Pulse Counters", "PulseCounters", out);
   TestButton(tmb, "Command Bus", "CommandBus", out);
   TestButton(tmb, "Dummy", "Dummy", out);
 

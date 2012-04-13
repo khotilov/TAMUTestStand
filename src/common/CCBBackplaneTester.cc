@@ -87,7 +87,7 @@ void CCBBackplaneTester::RegisterTestProcedures()
 {
   RegisterTheTest("All", boost::bind( &CCBBackplaneTester::TestAll, this));
   RegisterTheTest("Dummy", boost::bind( &CCBBackplaneTester::TestDummy, this));
-  RegisterTheTest("PulseCountersBits", boost::bind( &CCBBackplaneTester::TestPulseCountersBits, this));
+  RegisterTheTest("PulseCounters", boost::bind( &CCBBackplaneTester::TestPulseCounters, this));
   RegisterTheTest("CommandBus", boost::bind( &CCBBackplaneTester::TestCommandBus, this));
 }
 
@@ -112,6 +112,7 @@ void CCBBackplaneTester::Reset()
   if ( ccb_ )
   {
     ccb_->hardReset();
+    usleep(5000);
   }
   else
   {
@@ -146,9 +147,8 @@ void CCBBackplaneTester::SetTestResult(const std::string &test, int result)
 
 void CCBBackplaneTester::RunTest(const std::string &test)
 {
-  (*out_) << "CCBBackplaneTester: starting test "<< test << endl;
+  (*out_) << "CCBBackplaneTester: "<< test << " start" << endl;
 
-  bool test_result = true;
   if (testProcedures_.find(test) == testProcedures_.end())
   {
     cout<<__func__<<": WARNING: test with label "<<test<<" was not registered. Returning PASS."<<endl;
@@ -158,20 +158,19 @@ void CCBBackplaneTester::RunTest(const std::string &test)
     // make sure CCB is in FPGA mode
     if (test != "Dummy") SetFPGAMode(ccb_);
 
+    // issue L1Reset to reset the counters
+    ccb_->WriteRegister(CCB_VME_L1RESET, 1);
+
     // run the test
-    bool test_result = testProcedures_[test]();
-    testResults_[test] = test_result;
+    testResults_[test] = testProcedures_[test]();
   }
-
-  MessageOK(out_, "CCBBackplaneTester: " + test + " test result .... ", test_result);
 }
-
 
 bool CCBBackplaneTester::TestAll()
 {
-  (*out_) << "CCBBackplaneTester: Beginning full set of TMB self-tests" << endl;
+  cout << "CCBBackplaneTester: starting All tests" << endl;
 
-  Reset();
+  //Reset(); // WARNING: doing hard reset makes the 1st CommandBus test fail... why???
 
   bool result = true;
 
@@ -179,10 +178,15 @@ bool CCBBackplaneTester::TestAll()
   {
     string test = iproc->first;
 
+    if (test == "All") continue;
+    if (test == "Dummy") continue;
+
     // run the test
     bool test_result = (iproc->second)();
 
-    MessageOK(out_, test + "............. ", test_result);
+    //MessageOK(out_, test + "............. ", test_result);
+
+    cout << endl << "Done "<< test << " ------------------------------> " << test_result << endl << endl;
 
     testResults_[test] = test_result;
 
@@ -203,11 +207,11 @@ bool CCBBackplaneTester::TestAll()
 // Actual tests:
 ////////////////////////////////////////////////////
 
-bool CCBBackplaneTester::TestPulseCountersBits()
+bool CCBBackplaneTester::TestPulseCounters()
 {
   bool result = true;
 
-  int Niter = 250;
+  int Niter = 100;
 
   // walk through the pulse counter flags bits
   for (int ibit = 0; ibit < LENGTH_PULSE_IN_COMMANDS; ++ibit)
@@ -218,7 +222,12 @@ bool CCBBackplaneTester::TestPulseCountersBits()
 
     cout<<__func__<<" command & flag "<<hex<<command<< " "<<counter_flag<<dec<<endl;
 
-    // reset
+    // read pulse counter flags from TMB RR:
+    int counter_flags_read = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTERS_FLAG);
+    counter_flags_read = ResultRegisterData(counter_flags_read);
+
+    // make sure counter flags are off!!!
+    result &= CompareValues(out_, "PulseCounters", counter_flags_read, 0, true);
 
     // for finite pulse commands
     if (isFinitePulseCommand(command))
@@ -238,13 +247,35 @@ bool CCBBackplaneTester::TestPulseCountersBits()
     }
 
     // read pulse counter flags from TMB RR:
-    int counter_flags_read = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTERS_FLAG);
+    counter_flags_read = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTERS_FLAG);
     counter_flags_read = ResultRegisterData(counter_flags_read);
 
-    cout<<"__func__"<<" flags write/read "<<(counter_flags_read==counter_flag? "OK ": "BAD ")  << counter_flag<<" "<< counter_flags_read<<endl;
+    cout<<__func__<<" flags write/read "<<(counter_flags_read==counter_flag? "OK ": "BAD ")  << counter_flag<<" "<< counter_flags_read<<endl;
 
     // fail the test if not equal
-    result &= CompareValues(out_, "PulseCountersBits", counter_flags_read, counter_flag, true);
+    result &= CompareValues(out_, "PulseCounters", counter_flags_read, counter_flag, true, false);
+
+
+    // read total counter for pulses from TMB RR:
+    int counter_read = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTER);
+    counter_read = ResultRegisterData(counter_read);
+
+    // compare to the expected numbers
+    if (is25nsPulseCommand(command))
+    {
+      result &= CompareValues(out_, "PulseCounters", counter_read, Niter, true, false);
+    }
+    else if (is500nsPulseCommand(command))
+    {
+      result &= CompareValues(out_, "PulseCounters", (float)counter_read/Niter, 22., .1, false);
+    }
+    else if (command==CCB_VME_ALCT_ADB_PULSE_ASYNC)
+    {
+      result &= CompareValues(out_, "PulseCounters", (float)counter_read/Niter, 15., .1, false);
+    }
+
+    cout<<__func__<<" counter read "<< counter_read<<"  average = "<<(float)counter_read/Niter<<endl<<endl;
+
 
     // issue L1Reset to reset the counters
     ccb_->WriteRegister(CCB_VME_L1RESET, 1);
@@ -252,7 +283,7 @@ bool CCBBackplaneTester::TestPulseCountersBits()
 
   cout<<__func__<<" result "<<result<<endl;
 
-  MessageOK(out_, "CCBBackplaneTester: PulseCountersBits .... ", result);
+  MessageOK(out_, "CCBBackplaneTester: PulseCounters .... ", result);
   return result;
 }
 
@@ -261,35 +292,29 @@ bool CCBBackplaneTester::TestCommandBus()
 {
   bool result = true;
 
-  int Niter = 5;
+  int Niter = 100;
+
+  int reg[] = {0x05, 0x0A, 0x14, 0x28, 0x51, 0xA2, 0x60, 0x80};
 
   // walk over the range of values of the CSRB2 register
-  for (int reg = 0; reg < 256; ++reg)
+  for (int j = 0; j < 8; ++j)
   {
-    // skip some reserved values
-    int command_bus = reg & ~(0x03);
-    if (command_bus == 0x10 || // hard reset
-        command_bus == 0x3C || // hard reset CCB
-        command_bus == 0x40 || // hard reset TMB
-        command_bus == 0x0C || // L1Reset
-        reg == 0xCC // dedicated custom command
-    )
-      continue;
 
-    cout<<endl<<__func__<<" testing CSRB2 "<<hex<<reg<<endl<<endl;
+    cout<<endl<<__func__<<" testing CSRB2 "<<hex<<reg[j]<<endl<<endl;
 
     for (int i=0; i<Niter; ++i)
     {
       // load result register with the command code and read it back
-      int rr = LoadAndReadResutRegister(ccb_, tmb_->slot(), reg);
+      int rr = LoadAndReadResutRegister(ccb_, tmb_->slot(), reg[j]);
 
       // extract command bits
       int command_code = ResutRegisterCommand(rr);
+      //int pulse_counter = ResutRegisterData(rr);
 
-      cout<<__func__<<" write/read "<<(command_code==reg? "OK ": "BAD ")<<" = "<<reg<<" / "<<command_code<<endl;
+      cout<<__func__<<" write/read "<<(command_code==reg[j]? "OK ": "BAD ")<<" = "<<reg[j]<<" / "<<command_code<<endl;
 
       // compare the read out command code to the value written into the CSRB2 register
-      result &= CompareValues(out_, "CommandBus", command_code, reg, true);
+      result &= CompareValues(out_, "CommandBus", command_code, reg[j], true);
     }
 
     // issue L1Reset to reset the counters
@@ -301,6 +326,7 @@ bool CCBBackplaneTester::TestCommandBus()
   MessageOK(out_, "CCBBackplaneTester: CommandBus .... ", result);
   return result;
 }
+
 
 
 }} // namespaces

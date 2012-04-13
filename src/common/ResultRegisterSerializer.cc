@@ -89,13 +89,11 @@ unsigned long long int ResultRegisterSerializer::read(int length)
     }
 
     int status_bit = (csra2 >> shiftCsra2Alct_) & 1;
-    cout << "Status bit " << status_bit << endl;
-
-    cout << " --> status " << status_bit << " data " << data_bit << endl;
+    cout << " Status bit " << status_bit << " data " << data_bit ;
 
     result |= (data_bit << counter);
 
-    cout << counter << ": result " << result << " " << std::bitset< 17 >(result) << endl;
+    cout <<"   result " << result << " " << std::bitset< 17 >(result) << endl;
 
     if(status_bit)
     {
