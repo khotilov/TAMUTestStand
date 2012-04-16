@@ -13,6 +13,7 @@
 
 // system includes
 #include <iostream>
+#include <sstream>
 #include <stdio.h>
 #include <string>
 #include <unistd.h> // for sleep()
@@ -85,10 +86,9 @@ void CCBBackplaneTester::CopyFrom(const CCBBackplaneTester &other)
 
 void CCBBackplaneTester::RegisterTestProcedures()
 {
-  RegisterTheTest("All", boost::bind( &CCBBackplaneTester::TestAll, this));
-  RegisterTheTest("Dummy", boost::bind( &CCBBackplaneTester::TestDummy, this));
   RegisterTheTest("PulseCounters", boost::bind( &CCBBackplaneTester::TestPulseCounters, this));
   RegisterTheTest("CommandBus", boost::bind( &CCBBackplaneTester::TestCommandBus, this));
+  RegisterTheTest("Dummy", boost::bind( &CCBBackplaneTester::TestDummy, this));
 }
 
 
@@ -96,9 +96,10 @@ void CCBBackplaneTester::RegisterTheTest(const std::string &test, TestProcedure 
 {
   if (testProcedures_.find(test) != testProcedures_.end())
   {
-    cout << __func__ << ": WARNING: test with label " << test << " was already registered. It will be redefined." << endl;
+    cout << __PRETTY_FUNCTION__ << ": WARNING: test with label " << test << " was already registered. It will be redefined." << endl;
   }
 
+  testLabels_.push_back(test);
   testProcedures_[test] = proc;
   testResults_[test] = -1;
 
@@ -145,59 +146,58 @@ void CCBBackplaneTester::SetTestResult(const std::string &test, int result)
 }
 
 
-void CCBBackplaneTester::RunTest(const std::string &test)
+bool CCBBackplaneTester::RunTest(const std::string &test)
 {
-  (*out_) << "CCBBackplaneTester: "<< test << " start" << endl;
+  bool result = true;
 
-  if (testProcedures_.find(test) == testProcedures_.end())
+  // first, special case of running all tests:
+  if (test == "All")
   {
-    cout<<__func__<<": WARNING: test with label "<<test<<" was not registered. Returning PASS."<<endl;
+    //Reset(); // WARNING: doing hard reset makes the 1st CommandBus test fail... why???
+
+    // run All test in the order they were registered:
+    for (std::vector<std::string>::iterator itest = testLabels_.begin(); itest != testLabels_.end(); ++itest)
+    {
+      //if (*itest == "Dummy") continue;
+
+      // run the test
+      result &= RunTest(*itest);
+
+      // give it a little break before the next test
+      usleep(50);
+    }
+
+    (*out_) << "------------------------------" << endl;
+    MessageOK(out_, "Status of All tests ... ", result);
+  }
+  // make sure that the test label was registerd
+  else if (testProcedures_.find(test) == testProcedures_.end())
+  {
+    std::stringstream s;
+    s << __func__<<": WARNING! test with label "<<test<<" was not registered!"<<endl;
+    (*out_) << s.str();
+    cout << s.str();
+    return 1;
   }
   else
   {
-    // make sure CCB is in FPGA mode
-    if (test != "Dummy") SetFPGAMode(ccb_);
+    (*out_) << "Test with label "<< test << " ... start" << endl;
 
-    // issue L1Reset to reset the counters
-    ccb_->WriteRegister(CCB_VME_L1RESET, 1);
+    if (test == "DDummy")
+    {
+      // make sure CCB is in FPGA mode
+      SetFPGAMode(ccb_);
 
-    // run the test
-    testResults_[test] = testProcedures_[test]();
-  }
-}
-
-bool CCBBackplaneTester::TestAll()
-{
-  cout << "CCBBackplaneTester: starting All tests" << endl;
-
-  //Reset(); // WARNING: doing hard reset makes the 1st CommandBus test fail... why???
-
-  bool result = true;
-
-  for (std::map<std::string, TestProcedure>::iterator iproc = testProcedures_.begin(); iproc != testProcedures_.end(); ++iproc)
-  {
-    string test = iproc->first;
-
-    if (test == "All") continue;
-    if (test == "Dummy") continue;
+      // issue L1Reset to reset the counters
+      ccb_->WriteRegister(CCB_VME_L1RESET, 1);
+    }
 
     // run the test
-    bool test_result = (iproc->second)();
+    //result = testProcedures_[test]();
+    testResults_[test] = result;
 
-    //MessageOK(out_, test + "............. ", test_result);
-
-    cout << endl << "Done "<< test << " ------------------------------> " << test_result << endl << endl;
-
-    testResults_[test] = test_result;
-
-    result &= test_result;
-
-    // give it a little break before the next test
-    usleep(50);
+    MessageOK(out_, "Test with label " + test + " status ... ", result);
   }
-
-  (*out_) << "------------------------------" << endl;
-  MessageOK(out_, "CCBBackplaneTester: All tests result .... ", result);
 
   return result;
 }
@@ -220,7 +220,7 @@ bool CCBBackplaneTester::TestPulseCounters()
 
     int counter_flag = (1 << ibit);
 
-    cout<<__func__<<" command & flag "<<hex<<command<< " "<<counter_flag<<dec<<endl;
+    cout<< __func__ <<" command & flag "<<hex<<command<< " "<<counter_flag<<dec<<endl;
 
     // read pulse counter flags from TMB RR:
     int counter_flags_read = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTERS_FLAG);
@@ -250,7 +250,7 @@ bool CCBBackplaneTester::TestPulseCounters()
     counter_flags_read = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTERS_FLAG);
     counter_flags_read = ResultRegisterData(counter_flags_read);
 
-    cout<<__func__<<" flags write/read "<<(counter_flags_read==counter_flag? "OK ": "BAD ")  << counter_flag<<" "<< counter_flags_read<<endl;
+    cout<< __func__ <<" flags write/read "<<(counter_flags_read==counter_flag? "OK ": "BAD ")  << counter_flag<<" "<< counter_flags_read<<endl;
 
     // fail the test if not equal
     result &= CompareValues(out_, "PulseCounters", counter_flags_read, counter_flag, true, false);
@@ -269,21 +269,20 @@ bool CCBBackplaneTester::TestPulseCounters()
     {
       result &= CompareValues(out_, "PulseCounters", (float)counter_read/Niter, 22., .1, false);
     }
-    else if (command==CCB_VME_ALCT_ADB_PULSE_ASYNC)
+    else if (command == CCB_VME_ALCT_ADB_PULSE_ASYNC)
     {
       result &= CompareValues(out_, "PulseCounters", (float)counter_read/Niter, 15., .1, false);
     }
 
-    cout<<__func__<<" counter read "<< counter_read<<"  average = "<<(float)counter_read/Niter<<endl<<endl;
+    cout<< __func__ <<" counter read "<< counter_read<<"  average = "<<(float)counter_read/Niter<<endl<<endl;
 
 
     // issue L1Reset to reset the counters
     ccb_->WriteRegister(CCB_VME_L1RESET, 1);
   }
 
-  cout<<__func__<<" result "<<result<<endl;
+  cout<< __func__ <<" result " << result <<endl;
 
-  MessageOK(out_, "CCBBackplaneTester: PulseCounters .... ", result);
   return result;
 }
 
@@ -300,7 +299,7 @@ bool CCBBackplaneTester::TestCommandBus()
   for (int j = 0; j < 8; ++j)
   {
 
-    cout<<endl<<__func__<<" testing CSRB2 "<<hex<<reg[j]<<endl<<endl;
+    cout<<endl<< __func__ <<" testing CSRB2 "<<hex<<reg[j]<<endl<<endl;
 
     for (int i=0; i<Niter; ++i)
     {
@@ -311,7 +310,7 @@ bool CCBBackplaneTester::TestCommandBus()
       int command_code = ResutRegisterCommand(rr);
       //int pulse_counter = ResutRegisterData(rr);
 
-      cout<<__func__<<" write/read "<<(command_code==reg[j]? "OK ": "BAD ")<<" = "<<reg[j]<<" / "<<command_code<<endl;
+      cout<< __func__ <<" write/read "<< (command_code==reg[j]? "OK ": "BAD ") << " = " << reg[j] << " / " << command_code <<endl;
 
       // compare the read out command code to the value written into the CSRB2 register
       result &= CompareValues(out_, "CommandBus", command_code, reg[j], true);
@@ -321,9 +320,8 @@ bool CCBBackplaneTester::TestCommandBus()
     ccb_->WriteRegister(CCB_VME_L1RESET, 1);
   }
 
-  cout<<__func__<<" result "<<result<<endl;
+  cout<< __func__ <<" result "<< result <<endl;
 
-  MessageOK(out_, "CCBBackplaneTester: CommandBus .... ", result);
   return result;
 }
 

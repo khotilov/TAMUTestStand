@@ -38,6 +38,7 @@ using std::string;
 CCBBackplaneTestModule::CCBBackplaneTestModule(xdaq::WebApplication *app, ConfigurablePCrates *sys)
 : app_(app)
 , sys_(sys)
+, tmbN_(0)
 {
   // init with the "current" crate in the system, if it is set
   if (sys_->crateN() >= 0)
@@ -51,7 +52,7 @@ void CCBBackplaneTestModule::Init()
 {
   if (sys_->crate() == 0)
   {
-    cout<<__func__<<": current crate is not set"<<endl;
+    cout<<__PRETTY_FUNCTION__<<": current crate is not set"<<endl;
     return;
   }
   std::vector< TMB * > tmbs = sys_->crate()->tmbs();
@@ -83,7 +84,7 @@ void CCBBackplaneTestModule::CCBBackplaneTestsPage(xgi::Input * in, xgi::Output 
 
   if (thisTMB == 0 || thisChamber == 0 || thisCrate == 0)
   {
-    cout<<__func__<<": Current TMB is not set!!!" << endl;
+    cout<<__PRETTY_FUNCTION__<<": Current TMB is not set!!!" << endl;
     app_->Default(in, out);
   }
 
@@ -189,12 +190,13 @@ void CCBBackplaneTestModule::CCBBackplaneRunTest(xgi::Input * in, xgi::Output * 
   cgicc::Cgicc cgi(in);
   cgicc::form_iterator name = cgi.getElement("tmb");
 
-  int tmb=0;
   if(name != cgi.getElements().end())
   {
-    tmb = cgi["tmb"]->getIntegerValue();
-    cout << __func__ << ":  TMB " << tmb << endl;
-    tmbN_ = tmb;
+    tmbN_ = cgi["tmb"]->getIntegerValue();
+  }
+  else
+  {
+    cout << __func__ << "No tmb# in cgi input!" << endl;
   }
 
   string test_label = "";
@@ -203,16 +205,15 @@ void CCBBackplaneTestModule::CCBBackplaneRunTest(xgi::Input * in, xgi::Output * 
   if(name != cgi.getElements().end())
   {
     test_label = cgi["test_label"]->getValue();
-    cout << __func__ << ":  test_label " << test_label << endl;
   }
 
-  tests_[tmb].RedirectOutput(&testOutputs_[tmb]);
+  cout << __func__ << ":  test " << test_label<< "  for TMB #" << tmbN_  << endl;
 
-  tests_[tmb].RunTest(test_label);
+  tests_[tmbN_].RedirectOutput(&testOutputs_[tmbN_]);
 
-  tests_[tmb].RedirectOutput(&cout);
+  tests_[tmbN_].RunTest(test_label);
 
-  //cout << "Done" << endl;
+  tests_[tmbN_].RedirectOutput(&cout);
 
   this->CCBBackplaneTestsPage(in,out);
 }
@@ -220,51 +221,33 @@ void CCBBackplaneTestModule::CCBBackplaneRunTest(xgi::Input * in, xgi::Output * 
 
 void CCBBackplaneTestModule::CCBBackplaneLogTestsOutput(xgi::Input * in, xgi::Output * out )
 {
-  cout << "action TMBTestModule::LogTestsOutput" << endl;
-
   cgicc::Cgicc cgi(in);
   cgicc::form_iterator name = cgi.getElement("tmb");
 
-  int tmb;
   if (name != cgi.getElements().end())
   {
-    tmb = cgi["tmb"]->getIntegerValue();
-    cout << "TMB " << tmb << endl;
-    tmbN_ = tmb;
+    tmbN_ = cgi["tmb"]->getIntegerValue();
   }
   else
   {
-    cout << "No tmb in cgi input" << endl;
-    tmb = tmbN_;
+    cout << __func__ << "No tmb# in cgi input!" << endl;
   }
+
+  cout << __func__ << ":  for TMB #" << tmbN_  << endl;
 
   cgicc::form_iterator name2 = cgi.getElement("ClearTestsOutput");
   if (name2 != cgi.getElements().end())
   {
-    cout << "Clear..." << endl;
-    cout << cgi["ClearTestsOutput"]->getValue() << endl;
-    testOutputs_[tmb].str("");
+    cout << __func__ << "ClearTestsOutput" << endl;
+    testOutputs_[tmbN_].str("");
 
     CCBBackplaneTestsPage(in, out);
     return;
   }
 
-  string tmb_slot = toolbox::toString("%d", sys_->tmbs()[tmb]->slot());
+  string tmb_slot = toolbox::toString("%d", sys_->tmbs()[tmbN_]->slot());
   string file_name = "CCBBackplaneTests_TMBslot" + tmb_slot + "_" + emu::utils::getDateTime(true) + ".log";
-  emu::utils::saveAsFileDialog(out, testOutputs_[tmb].str(), file_name);
-
-  /*
-  char file_name[20];
-  sprintf(file_name, "/tmp/TMBTestsLogFile_%d.log", sys_->tmbs()[tmb]->slot());
-  std::ofstream log_file;
-  log_file.open(file_name);
-  log_file << testOutputs_[tmb].str();
-  log_file.close();
-
-  testOutputs_[tmb].str("");
-
-  CCBBackplaneTestsPage(in, out);
-  */
+  emu::utils::saveAsFileDialog(out, testOutputs_[tmbN_].str(), file_name);
 }
 
 

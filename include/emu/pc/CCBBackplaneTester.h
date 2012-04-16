@@ -56,7 +56,7 @@ public:
   void SetTestResult(const std::string &test, int result);
 
   /// run test with specific label
-  void RunTest(const std::string &test);
+  bool RunTest(const std::string &test);
 
   /// issue HardReset
   void Reset();
@@ -76,9 +76,6 @@ private:
   void RegisterTheTest(const std::string &test, TestProcedure proc);
 
   // actual test procedures
-
-  /// run all tests
-  bool TestAll();
 
   /// dummy test
   bool TestDummy() {return true;}
@@ -104,6 +101,9 @@ private:
 
   /// where to store the results output
   std::ostream * out_ ;
+
+  /// keep _ordered_ list of test labels
+  std::vector<std::string> testLabels_;
 
   /// test label -> test procedure association
   std::map<std::string, TestProcedure> testProcedures_ ;

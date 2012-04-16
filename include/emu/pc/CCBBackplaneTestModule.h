@@ -59,13 +59,14 @@ private:
   /// the system under testing
   ConfigurablePCrates * sys_;
 
+  /// remember last tmb index
+  int tmbN_;
+
   /// tests runner classes for tmbs in a particular crate initialized with InitTMBTests
   std::vector<CCBBackplaneTester> tests_;
 
   /// keeps tests' output for [tmb]
   std::ostringstream testOutputs_[10];
-
-  int tmbN_;
 };
 
 
