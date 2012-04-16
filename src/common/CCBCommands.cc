@@ -130,7 +130,7 @@ void WriteTMBReserved0Bit(CCB* ccb, int value)
 }
 
 
-int LoadAndReadResutRegister(CCB* ccb, int tmb_slot, int load_command)
+uint32_t LoadAndReadResutRegister(CCB* ccb, int tmb_slot, int load_command)
 {
   ccb->WriteRegister(CCB_CSRB2_COMMAND_BUS, load_command);
   ResultRegisterSerializer reader(ccb, tmb_slot);
@@ -138,13 +138,13 @@ int LoadAndReadResutRegister(CCB* ccb, int tmb_slot, int load_command)
 }
 
 
-int ResutRegisterCommand(int rr)
+uint32_t ResutRegisterCommand(uint32_t rr)
 {
   // currently, it's first 8 bits
   return rr & 0xFF;
 }
 
-int ResultRegisterData(int rr)
+uint32_t ResultRegisterData(uint32_t rr)
 {
   // currently, it's 12 bits [19:8]
   return ( rr >> 8 ) & 0xFFF;

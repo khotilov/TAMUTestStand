@@ -67,6 +67,14 @@ private:
    */
   bool TestCommandBus();
 
+  /**
+   * Test CCB_reserved[0:3] connections
+   * CCB_reserved0 - trivial test (no real way to control it right now)
+   * CCB_reserved1 - trivial test (no real way to control it right now)
+   * CCB_reserved2 - write through CSRB6, read through RR0
+   * CCB_reserved3 - write through CSRB6, read through RR0
+   */
+  bool TestCCBReserved();
 
   // holds CCB and TMB pointers
   CCB * ccb_;

@@ -117,20 +117,19 @@ void CCBBackplaneTestModule::CCBBackplaneTestsPage(xgi::Input * in, xgi::Output 
 
   TestButton(tmb, "Pulse Counters", "PulseCounters", out);
   TestButton(tmb, "Command Bus", "CommandBus", out);
-  TestButton(tmb, "Dummy", "Dummy", out);
+  TestButton(tmb, "Data Bus", "DataBus", out);
 
   *out << tr();
 
   /////////////////////////////////////////////////////////
-/*
+
   *out << tr().set("ALIGN","center");
 
-  TestButton(tmb, 5, "Dummy", tests_[tmb].GetTestResult("Dummy"), out);
-  TestButton(tmb, 6, "Dummy", tests_[tmb].GetTestResult("Dummy"), out);
-  TestButton(tmb, 7, "Dummy", tests_[tmb].GetTestResult("Dummy"), out);
+  TestButton(tmb, "CCB_reserved", "CCBReserved", out);
+  TestButton(tmb, "Dummy", "Dummy", out);
 
   *out << tr();
-*/
+
   *out << cgicc::table();
 
   /////////////////////////////////////////////////////////////////////

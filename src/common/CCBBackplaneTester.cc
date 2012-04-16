@@ -69,6 +69,7 @@ void CCBBackplaneTester::RegisterTestProcedures()
 
   RegisterTheTest("PulseCounters", boost::bind( &CCBBackplaneTester::TestPulseCounters, this));
   RegisterTheTest("CommandBus", boost::bind( &CCBBackplaneTester::TestCommandBus, this));
+  RegisterTheTest("CCBReserved", boost::bind( &CCBBackplaneTester::TestCCBReserved, this));
   RegisterTheTest("Dummy", boost::bind( &CCBBackplaneTester::TestDummy, this));
 }
 
@@ -151,9 +152,8 @@ bool CCBBackplaneTester::TestPulseCounters()
     result &= CompareValues(out(), "PulseCounters", counter_flags_read, counter_flag, true, false);
 
 
-    // read total counter for pulses from TMB RR:
-    int counter_read = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTER);
-    counter_read = ResultRegisterData(counter_read);
+    // read the total pulse counter out of the TMB RR:
+    uint32_t counter_read = ResultRegisterData( LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTER) );
 
     // compare to the expected numbers
     if (is25nsPulseCommand(command))
@@ -188,7 +188,7 @@ bool CCBBackplaneTester::TestCommandBus()
 
   int Niter = 100;
 
-  int reg[] = {0x05, 0x0A, 0x14, 0x28, 0x51, 0xA2, 0x60, 0x80};
+  uint32_t reg[] = {0x05, 0x0A, 0x14, 0x28, 0x51, 0xA2, 0x60, 0x80};
 
   // walk over the range of values of the CSRB2 register
   for (int j = 0; j < 8; ++j)
@@ -198,14 +198,10 @@ bool CCBBackplaneTester::TestCommandBus()
 
     for (int i=0; i<Niter; ++i)
     {
-      // load result register with the command code and read it back
-      int rr = LoadAndReadResutRegister(ccb_, tmb_->slot(), reg[j]);
+      // load result register with the command code, read it back, and extract the command field
+      uint32_t command_code = ResutRegisterCommand( LoadAndReadResutRegister(ccb_, tmb_->slot(), reg[j]) );
 
-      // extract command bits
-      int command_code = ResutRegisterCommand(rr);
-      //int pulse_counter = ResutRegisterData(rr);
-
-      cout<< __func__ <<" write/read "<< (command_code==reg[j]? "OK ": "BAD ") << " = " << reg[j] << " / " << command_code <<endl;
+      cout<< __func__ <<" write/read "<< (command_code == reg[j]? "OK ": "BAD ") << " = " << reg[j] << " / " << command_code <<endl;
 
       // compare the read out command code to the value written into the CSRB2 register
       result &= CompareValues(out(), "CommandBus", command_code, reg[j], true);
@@ -220,6 +216,76 @@ bool CCBBackplaneTester::TestCommandBus()
   return result;
 }
 
+
+bool CCBBackplaneTester::TestCCBReserved()
+{
+  bool result = true;
+
+  RR0Bits rr0;
+
+  //  CCB_reserved0 - trivial read-only test
+  rr0.r = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR0);
+  cout << " CCB_reserved0: read bit value " << rr0.CCB_reserved0 <<endl;
+  // reset the counters
+  ccb_->WriteRegister(CCB_VME_L1RESET, 1);
+
+
+  //  CCB_reserved1 - trivial read-only test
+  rr0.r = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR0);
+  cout << " CCB_reserved1: read bit value " << rr0.CCB_reserved1 <<endl;
+  // reset the counters
+  ccb_->WriteRegister(CCB_VME_L1RESET, 1);
+
+
+  // ----- CCB_reserved2 & CCB_reserved3
+
+  int Niter = 20;
+
+  // read in  CSRB6 register
+  CSRB6Bits csrb6;
+  csrb6.r = ccb_->ReadRegister(CCB_CSRB6);
+
+  // odd iteration number: activate CCB_reserved2 & CCB_reserved3 bits
+  // even iteration number: de-activate CCB_reserved2 & CCB_reserved3 bits
+  for (int i = 0; i < Niter; ++i)
+  {
+    if (i % 2) // de-activate
+    {
+      csrb6.CCB_reserved2 = 0;
+      csrb6.CCB_reserved3 = 0;
+    }
+    else // activate
+    {
+      csrb6.CCB_reserved2 = 1;
+      csrb6.CCB_reserved3 = 1;
+    }
+    ccb_->WriteRegister(CCB_CSRB6, csrb6.r);
+
+    // give it a break
+    usleep(50);
+
+    // read RR0 bits from TMB
+    rr0.r = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR0);
+
+    // compare the read out bit to the written value
+    result &= CompareValues(out(), "CCB_reserved2", rr0.CCB_reserved2, csrb6.CCB_reserved2, false);
+    result &= CompareValues(out(), "CCB_reserved3", rr0.CCB_reserved3, csrb6.CCB_reserved3, true);
+
+    cout << " CCB_reserved2 & 3: written " << csrb6.CCB_reserved2 << " " << csrb6.CCB_reserved3
+        << "  read " << rr0.CCB_reserved2 << " " << rr0.CCB_reserved3 <<endl;
+
+    // issue L1Reset to reset the counters
+    ccb_->WriteRegister(CCB_VME_L1RESET, 1);
+  }
+
+
+  // TODO: loopback board related tests for CCB_reserved2 & CCB_reserved3
+
+
+  cout<< __func__ <<" result "<< result <<endl;
+
+  return result;
+}
 
 
 }} // namespaces

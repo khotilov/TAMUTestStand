@@ -1,8 +1,14 @@
 #ifndef _Emu_PC_CCBCommands_h_
 #define _Emu_PC_CCBCommands_h_
 
+#include <stdint.h>
+
 
 namespace emu { namespace pc {
+
+// Forward declarations
+class CCB;
+
 
 // control & status registers
 const int CCB_CSRA1 = 0x00;
@@ -34,6 +40,7 @@ const int CCB_VME_DMB_CFEB_CALIB1 = 0x8C;
 const int CCB_VME_DMB_CFEB_CALIB2 = 0x8E;
 
 // Dummy command code for TMB_reserved0
+// Note: it CANNOT be written to VME, use it only for internal bookkeeping
 const int CCB_VME_TMB_RESERVED0 = 0xBB;
 
 
@@ -44,7 +51,6 @@ const int CCB_COM_RR_READ = 0xCC;
 const int CCB_COM_RR_LOAD_COUNTER = 0xCD;
 const int CCB_COM_RR_LOAD_DATA_BUS = 0xCE;
 const int CCB_COM_RR_LOAD_COUNTERS_FLAG = 0xCF;
-
 
 
 // VME commands that correspond to pulse counter flags that they trigger.
@@ -67,6 +73,71 @@ const int PULSE_IN_COMMANDS[] =
 const int LENGTH_PULSE_IN_COMMANDS = sizeof(PULSE_IN_COMMANDS)/sizeof(PULSE_IN_COMMANDS[0]);
 
 
+//// Special bits that are set by TMB in RR after issuing the CCB_COM_RR0 command on command bus.
+//// Note that the bit shifts include the command field width (8 bits)
+union RR0Bits
+{
+  uint32_t r; // value of the TMB result register after the CCB_COM_RR0 command
+
+  struct {
+    unsigned int command : 8; // 1st 8 bits
+    unsigned int CCB_reserved0 : 1; //#8
+    unsigned int CCB_reserved1 : 1;
+    unsigned int CCB_reserved2 : 1;
+    unsigned int CCB_reserved3 : 1;
+    unsigned int TMB_reserved0 : 1; // #12
+    unsigned int unused : 3;
+    unsigned int DMB_reserved_in0 : 1; // #16
+    unsigned int DMB_reserved_in1 : 1; //
+    unsigned int DMB_reserved_in2 : 1; //
+    unsigned int DMB_L1A_release : 1; // #19
+  };
+};
+
+
+/// Accessors to the bit fields of CSRB6
+union CSRB6Bits
+{
+  unsigned int r; // value of the CSRB6 register
+
+  struct {
+    unsigned int CCB_reserved2 : 1; // #0
+    unsigned int CCB_reserved3 : 1;
+    unsigned int TMB_reserved0 : 1; // #2
+    unsigned int MPC_reserved0 : 1; // #3
+    unsigned int MPC_reserved1 : 1; //
+    unsigned int DMB_reserved0 : 1; // #5
+    unsigned int DMB_reserved1 : 1; //
+    unsigned int TMB_reserved_out0 : 1; // #7
+    unsigned int TMB_reserved_out1 : 1; //
+    unsigned int TMB_reserved_out2 : 1; //
+    unsigned int DMB_reserved_out0 : 1; // #10
+    unsigned int DMB_reserved_out1 : 1; //
+    unsigned int DMB_reserved_out2 : 1; //
+    unsigned int DMB_reserved_out3 : 1; //
+    unsigned int DMB_reserved_out4 : 1; //
+  };
+};
+
+
+/// Accessors to the bit fields of CSRB11
+union CSRB11Bits
+{
+  unsigned int r; // value of the CSRB11 register
+
+  struct {
+    unsigned int DMB_reserved_in0 : 1; // #0
+    unsigned int DMB_reserved_in1 : 1; //
+    unsigned int DMB_reserved_in2 : 1; //
+    unsigned int TMB_reserved_in0 : 1; // #3
+    unsigned int TMB_reserved_in1 : 1; //
+    unsigned int TMB_reserved_in2 : 1; //
+    unsigned int TMB_reserved_in3 : 1; //
+    unsigned int TMB_reserved_in4 : 1; //
+  };
+};
+
+
 /// check if command triggers a single 25 ns pulse
 bool is25nsPulseCommand(const int command);
 
@@ -77,8 +148,6 @@ bool is500nsPulseCommand(const int command);
 bool isFinitePulseCommand(const int command);
 
 
-
-class CCB;
 
 
 /// Set backplane to be controlled by FPGA
@@ -96,14 +165,15 @@ int Read5ReservedBits(CCB* ccb);
 /// Write TMB_reserved0 bit
 void WriteTMBReserved0Bit(CCB* ccb, int value);
 
+
 /// load TMB result register using load_command, and read in the value
-int LoadAndReadResutRegister(CCB* ccb, int tmb_slot, int load_command);
+uint32_t LoadAndReadResutRegister(CCB* ccb, int tmb_slot, int load_command);
 
 /// extract command code from TMB result register value
-int ResutRegisterCommand(int rr);
+uint32_t ResutRegisterCommand(uint32_t rr);
 
 /// extract the data from TMB result register value
-int ResultRegisterData(int rr);
+uint32_t ResultRegisterData(uint32_t rr);
 
 }} // namespaces
 
