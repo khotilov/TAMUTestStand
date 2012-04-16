@@ -19,7 +19,7 @@ using std::dec;
 
 
 
-bool CompareValues(std::ostream * out,
+bool CompareValues(std::ostream &out,
                    const std::string &test,
                    int testval,
                    int compareval,
@@ -39,19 +39,19 @@ bool CompareValues(std::ostream * out,
   {
     if(print_pass)
     {
-      (*out) << "CompareValues:  " << test << " -> PASS! " << test << " : " << hex << testval << pass_relation << compareval << dec << endl;
+      out << "CompareValues:  " << test << " -> PASS! " << test << " : " << hex << testval << pass_relation << compareval << dec << endl;
     }
     return true;
   }
   else
   {
-    (*out) << "CompareValues:  " << test << " -> FAIL! " << test << " : " << hex << testval << fail_relation << compareval << dec << endl;
+    out << "CompareValues:  " << test << " -> FAIL! " << test << " : " << hex << testval << fail_relation << compareval << dec << endl;
     return false;
   }
 }
 
 
-bool CompareValues(std::ostream * out,
+bool CompareValues(std::ostream &out,
                    const std::string &test,
                    float testval,
                    float compareval,
@@ -63,27 +63,27 @@ bool CompareValues(std::ostream * out,
 
   if (std::abs(err) > tolerance)
   {
-    (*out) << "CompareValues tolerance:  " << test << " -> FAIL! " << test << " : expected = " << compareval << ", returned = " << testval << " outside of tolerance " << fractolerance << endl;
+    out << "CompareValues tolerance:  " << test << " -> FAIL! " << test << " : expected = " << compareval << ", returned = " << testval << " outside of tolerance " << fractolerance << endl;
     return false;
   }
   else
   {
     if(print_pass)
     {
-      (*out) << "CompareValues tolerance:  " << test << " -> PASS! " << test << " : value = " << testval << " within "<< fractolerance << " of " << compareval << endl;
+      out << "CompareValues tolerance:  " << test << " -> PASS! " << test << " : value = " << testval << " within "<< fractolerance << " of " << compareval << endl;
     }
     return true;
   }
 }
 
 
-void MessageOK(std::ostream * out,
+void MessageOK(std::ostream &out,
                const std::string &test,
                bool testbool)
 {
-  (*out) << test;
-  if (testbool) (*out) << " -> PASS" << endl;
-  else          (*out) << " -> FAIL <-" << endl;
+  out << test;
+  if (testbool) out << " -> PASS" << endl;
+  else          out << " -> FAIL <-" << endl;
   return;
 }
 

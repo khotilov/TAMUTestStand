@@ -1,12 +1,8 @@
 #ifndef emu_pc_CCBBackplaneTester_h
 #define emu_pc_CCBBackplaneTester_h
 
-#include <iostream>
-#include <stdio.h>
-#include <string>
-#include <vector>
-#include <map>
-#include <boost/function.hpp>
+#include "emu/pc/TestWorkerBase.h"
+
 
 namespace emu { namespace pc {
 
@@ -16,47 +12,27 @@ class CCB;
 
 /** class CCBBackplaneTester
  *
- * Runs actual test units for TMB-CCB testing using backplane.
+ * Implements actual test procedures for the TMB testing using CCB and backplane.
  *
  * \author Vadim Khotilovich
  */
-class CCBBackplaneTester
+class CCBBackplaneTester : public TestWorkerBase
 {
 public:
 
   // not responsible for deleting pointers
   CCBBackplaneTester();
 
-  /// copy c-tor (allows, e.g., storing objects of this class properly in std::vectors etc.)
+  /// copy c-tor (allows, e.g., proper storing objects of this class in std::vectors, etc.)
   CCBBackplaneTester(const CCBBackplaneTester &);
-
-  virtual ~CCBBackplaneTester();
 
   /// custom assignment operator is also needed
   CCBBackplaneTester & operator=(const CCBBackplaneTester &);
 
-  /// Allows to set the results output destination.
-  /// Initially, the internal out_ output is set to std::cout in the constructor.
-  void RedirectOutput(std::ostream * output) { out_ = output ; }
+  virtual ~CCBBackplaneTester();
 
   void SetTMB(TMB * tmb) {tmb_ = tmb;}
   void SetCCB(CCB * ccb) {ccb_ = ccb;}
-
-  /// returns labels of available registered tests
-  std::vector<std::string> GetTestLabels();
-
-  /** Getter for the result of a test with specific label.
-   * The results are first initialized to -1 in the constructor.
-   * Running the tests through RunTest would be setting
-   * result values to either 0 (not pass) or 1 (pass).
-   */
-  int GetTestResult(const std::string &test);
-
-  /// setter for the result of a test with specific label
-  void SetTestResult(const std::string &test, int result);
-
-  /// run test with specific label
-  bool RunTest(const std::string &test);
 
   /// issue HardReset
   void Reset();
@@ -66,14 +42,11 @@ private:
   /// helper copying method for internal use by the copy c-tor and the assignment operator
   void CopyFrom(const CCBBackplaneTester &other);
 
-  /// test procedure should have this type: no parameters, returns bool
-  typedef boost::function<bool ()> TestProcedure;
-
   /// register all the test procedures
   void RegisterTestProcedures();
 
-  /// register a new test procedure with a given label
-  void RegisterTheTest(const std::string &test, TestProcedure proc);
+  /// implementation of the base class method
+  void PrepareHWForTest();
 
   // actual test procedures
 
@@ -98,18 +71,6 @@ private:
   // holds CCB and TMB pointers
   CCB * ccb_;
   TMB * tmb_;
-
-  /// where to store the results output
-  std::ostream * out_ ;
-
-  /// keep _ordered_ list of test labels
-  std::vector<std::string> testLabels_;
-
-  /// test label -> test procedure association
-  std::map<std::string, TestProcedure> testProcedures_ ;
-
-  /// test label -> test result association
-  std::map<std::string, int> testResults_ ;
 };
 
 

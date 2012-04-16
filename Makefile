@@ -20,6 +20,7 @@ Sources=\
 	Version.cc \
 	TestUtils.cc \
 	CCBCommands.cc \
+	TestWorkerBase.cc \
 	CCBBackplaneTester.cc \
 	ResultRegisterSerializer.cc \
 	ConfigurablePCrates.cc \

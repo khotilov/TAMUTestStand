@@ -38,11 +38,13 @@ const int CCB_VME_TMB_RESERVED0 = 0xBB;
 
 
 // custom TMB testing command codes to write into the command bus
+const int CCB_COM_RR0 = 0x00;
 const int CCB_COM_RR_LOAD_CCB_RX0 = 0xC0;
 const int CCB_COM_RR_READ = 0xCC;
 const int CCB_COM_RR_LOAD_COUNTER = 0xCD;
 const int CCB_COM_RR_LOAD_DATA_BUS = 0xCE;
 const int CCB_COM_RR_LOAD_COUNTERS_FLAG = 0xCF;
+
 
 
 // VME commands that correspond to pulse counter flags that they trigger.
