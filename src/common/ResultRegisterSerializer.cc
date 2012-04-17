@@ -38,6 +38,7 @@ int ResultRegisterSerializer::slotToIndexLUT_[22] = {0,0,0,0,1,0,2,0,4,0,5,0,0,0
 ResultRegisterSerializer::ResultRegisterSerializer(CCB *ccb, int tmb_slot)
 : ccb_(ccb)
 , tmbSlot_(tmb_slot)
+, verbose_(0)
 {
   shiftCsra2Alct_ = slotToIndexLUT_[tmb_slot] + 1;
   shiftCsra2Tmb_ = slotToIndexLUT_[tmb_slot] + 10;
@@ -52,8 +53,13 @@ ResultRegisterSerializer::ResultRegisterSerializer(CCB *ccb, int tmb_slot)
   SetFPGAMode(ccb_);
 }
 
+void ResultRegisterSerializer::setVerbose(int level)
+{
+  verbose_ = level;
+}
 
-unsigned long long int ResultRegisterSerializer::read(int length)
+
+uint32_t ResultRegisterSerializer::read(int length)
 {
   using std::hex;
   using std::dec;
@@ -61,8 +67,8 @@ unsigned long long int ResultRegisterSerializer::read(int length)
   emu::utils::SimpleTimer timer;
 
   unsigned long long int result = 0;
-
-  cout << "--- ResultRegisterSerializer::read ---" << endl;
+  if(verbose_>0)
+    cout << "--- ResultRegisterSerializer::read ---" << endl;
 
   int counter = 0;
   while(counter >= 0 && counter < length && counter < TMB_RESULT_REGISTER_WIDTH)
@@ -74,7 +80,8 @@ unsigned long long int ResultRegisterSerializer::read(int length)
 
     // read status registers
     int csra2 = ccb_->ReadRegister(CCB_CSRA2_STATUS);
-    cout << counter << ": csra2 = " << hex << csra2 << dec  <<" "<< std::bitset< 17 >(csra2);
+    if(verbose_>0)
+      cout << counter << ": csra2 = " << hex << csra2 << dec  <<" "<< std::bitset< 17 >(csra2);
 
     int data_bit = 0;
     if (tmbSlot_ < 16)  // TMB status bit is in CSRA2
@@ -84,16 +91,19 @@ unsigned long long int ResultRegisterSerializer::read(int length)
     else                // TMB status bit is in CSRA3
     {
       int csra3 = ccb_->ReadRegister(CCB_CSRA3_STATUS);
-      cout << counter << ": csra3 = " << hex << csra3 << dec << " " << std::bitset< 17 >(csra3);
+      if(verbose_>0)
+        cout << counter << ": csra3 = " << hex << csra3 << dec << " " << std::bitset< 17 >(csra3);
       data_bit = (csra3 >> shiftCsra3Tmb_) & 1;
     }
 
     int status_bit = (csra2 >> shiftCsra2Alct_) & 1;
-    cout << " Status bit " << status_bit << " data " << data_bit ;
+    if(verbose_>0)
+      cout << " Status bit " << status_bit << " data " << data_bit ;
 
     result |= (data_bit << counter);
 
-    cout <<"   result " << result << " " << std::bitset< 17 >(result) << endl;
+    if(verbose_>0)
+      cout <<"   result " << result << " " << std::bitset< 17 >(result) << endl;
 
     if(status_bit)
     {
@@ -104,8 +114,9 @@ unsigned long long int ResultRegisterSerializer::read(int length)
       ++counter;
     }
   }
-
-  cout<<"ResultRegisterSerializer::read[msec] "<<timer.sec()*1000.<<endl;
+  
+  if(verbose_>0)
+    cout<<"ResultRegisterSerializer::read[msec] "<<timer.sec()*1000.<<endl;
 
   return result;
 }

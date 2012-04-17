@@ -118,6 +118,7 @@ void CCBBackplaneTestModule::CCBBackplaneTestsPage(xgi::Input * in, xgi::Output 
   TestButton(tmb, "Pulse Counters", "PulseCounters", out);
   TestButton(tmb, "Command Bus", "CommandBus", out);
   TestButton(tmb, "Data Bus", "DataBus", out);
+  TestButton(tmb, "Clock 40", "CCBClock40", out);
 
   *out << tr();
 

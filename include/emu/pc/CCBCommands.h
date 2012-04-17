@@ -86,7 +86,9 @@ union RR0Bits
     unsigned int CCB_reserved2 : 1;
     unsigned int CCB_reserved3 : 1;
     unsigned int TMB_reserved0 : 1; // #12
-    unsigned int unused : 3;
+    unsigned int TMB_reserved_out0 : 1; // #13
+    unsigned int TMB_reserved_out1 : 1; //
+    unsigned int TMB_reserved_out2 : 1; //
     unsigned int DMB_reserved_in0 : 1; // #16
     unsigned int DMB_reserved_in1 : 1; //
     unsigned int DMB_reserved_in2 : 1; //

@@ -15,6 +15,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <set>
 #include <unistd.h> // for sleep()
 #include <boost/bind.hpp>
 
@@ -24,6 +25,7 @@ namespace emu { namespace pc {
 using std::endl;
 using std::cout;
 using std::string;
+using std::set;
 using std::hex;
 using std::dec;
 
@@ -71,6 +73,8 @@ void CCBBackplaneTester::RegisterTestProcedures()
   RegisterTheTest("CommandBus", boost::bind( &CCBBackplaneTester::TestCommandBus, this));
   RegisterTheTest("CCBReserved", boost::bind( &CCBBackplaneTester::TestCCBReserved, this));
   RegisterTheTest("Dummy", boost::bind( &CCBBackplaneTester::TestDummy, this));
+  RegisterTheTest("DataBus", boost::bind( &CCBBackplaneTester::TestDataBus, this));
+  RegisterTheTest("CCBClock40", boost::bind( &CCBBackplaneTester::TestCCBClock40, this));
 }
 
 
@@ -239,7 +243,7 @@ bool CCBBackplaneTester::TestCCBReserved()
 
   // ----- CCB_reserved2 & CCB_reserved3
 
-  int Niter = 20;
+  int Niter = 50;
 
   // read in  CSRB6 register
   CSRB6Bits csrb6;
@@ -268,8 +272,8 @@ bool CCBBackplaneTester::TestCCBReserved()
     rr0.r = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR0);
 
     // compare the read out bit to the written value
-    result &= CompareValues(out(), "CCB_reserved2", rr0.CCB_reserved2, csrb6.CCB_reserved2, false);
-    result &= CompareValues(out(), "CCB_reserved3", rr0.CCB_reserved3, csrb6.CCB_reserved3, true);
+    result &= CompareValues(out(), "CCBReserved2", rr0.CCB_reserved2, csrb6.CCB_reserved2, true);
+    result &= CompareValues(out(), "CCBReserved3", rr0.CCB_reserved3, csrb6.CCB_reserved3, true);
 
     cout << " CCB_reserved2 & 3: written " << csrb6.CCB_reserved2 << " " << csrb6.CCB_reserved3
         << "  read " << rr0.CCB_reserved2 << " " << rr0.CCB_reserved3 <<endl;
@@ -285,6 +289,95 @@ bool CCBBackplaneTester::TestCCBReserved()
   cout<< __func__ <<" result "<< result <<endl;
 
   return result;
+}
+
+
+bool CCBBackplaneTester::TestDataBus()
+{
+  bool result = true;
+  
+  int Niter = 20;
+  
+  uint32_t reg[] = {0x05, 0x0A, 0x14, 0x28, 0x51, 0xA2, 0x60, 0x80};
+  
+  // walk over the range of values of the DataBus (CSRB2)
+  for(int j=0; j<8; ++j)
+  {
+    for(int i=0; i<Niter; ++i)
+    {
+      // write DataBus with test value
+      ccb_->WriteRegister(CCB_CSRB3_DATA_BUS, reg[j]);
+      
+      // read back DataBus from result register
+      uint32_t data_bus_read = ResultRegisterData( LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_DATA_BUS) );
+      
+      cout<< __func__ <<" write/read "<< (data_bus_read == reg[j]? "OK ": "BAD ") << " = " << hex << reg[j] << " / " << data_bus_read << dec <<endl;
+      
+      // compare data bus from result register to test value written to DataBus
+      result &= CompareValues(out(), "DataBus", data_bus_read & 0xFF, reg[j], true);
+
+      // check that the four clock_status bits are zero
+      result &= CompareValues(out(), "DataBus clock_status", (data_bus_read >> 8) & 0x0F, 0, true);
+    }
+  }
+  
+  cout<< __func__ <<" result "<< result <<endl;
+  
+  return result;
+}
+
+
+bool CCBBackplaneTester::TestCCBClock40()
+{
+  int Niter = 250;
+  double tolerance = .05;
+  
+  int repeat_count = 0;
+  uint32_t prev_val = ResultRegisterData( LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_CCB_RX0) );
+  for(int i=1; i<Niter; ++i)
+  {
+    cout << " clock_val " << prev_val << endl;
+    
+    // load ccb_clock40_enable or ccb_rx0 value into RR
+    uint32_t clock_val = ResultRegisterData( LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_CCB_RX0) );
+    
+    if (clock_val == prev_val)
+    {
+      cout << i << " repeat value" << endl;
+      ++repeat_count;
+    }
+    prev_val = clock_val;
+  }
+  
+  bool result = CompareValues(out(), "CCBClock40", (float)(Niter-repeat_count), (float)Niter, tolerance, true);
+  
+  cout<< __func__ <<" iterations/ unique values "<< (result? "OK ": "BAD ") << " = " << dec << Niter << " / " << (Niter-repeat_count) <<endl;
+  
+  return result;
+
+  /*
+  int Niter = 1000;
+  double tolerance = .2;
+  
+  set<uint32_t> clock_values;
+  
+  size_t prev_size = clock_values.size();
+  for(int i=0; i<Niter; ++i)
+  {
+    // load ccb_clock40_enable or ccb_rx0 value into RR
+    uint32_t clock_val = ResultRegisterData( LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_CCB_RX0) );
+    cout<<" clock_val "<<dec<<clock_val<<endl;
+    
+    clock_values.insert(clock_val);
+    if (clock_values.size() == prev_size) cout<<dec<<i<<" non-uniq"<<endl;
+    prev_size = clock_values.size();
+  }
+  
+  bool result = CompareValues(out(), "CCBClock40", (float)clock_values.size(), (float)Niter, tolerance, true);
+  
+  cout<< __func__ <<" iterations/ unique values "<< (result? "OK ": "BAD ") << " = " << dec << Niter << " / " << clock_values.size() <<endl;
+  return result;
+  */
 }
 
 

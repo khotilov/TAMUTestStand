@@ -7,6 +7,7 @@
 
 // Emu includes
 #include "emu/pc/TestUtils.h"
+#include "emu/utils/SimpleTimer.h"
 
 // system includes
 #include <iostream>
@@ -85,6 +86,8 @@ void TestWorkerBase::SetTestResult(const std::string &test, int result)
 
 bool TestWorkerBase::RunTest(const std::string &test)
 {
+  emu::utils::SimpleTimer timer;
+
   bool result = true;
 
   // first, special case of running all tests:
@@ -131,6 +134,8 @@ bool TestWorkerBase::RunTest(const std::string &test)
 
     MessageOK(out(), "Test with label " + test + " status ... ", result);
   }
+
+  cout << "Time: " << timer.sec() << "sec for test with label " << test << endl;
 
   return result;
 }

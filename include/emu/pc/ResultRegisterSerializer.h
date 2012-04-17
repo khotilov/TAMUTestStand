@@ -1,11 +1,13 @@
 #ifndef _ResultRegisterSerializer_h_
 #define _ResultRegisterSerializer_h_
 
+#include <stdint.h>
 
 namespace emu { namespace pc {
 
 class CCB;
 
+/// Maximal width of the result register
 const int TMB_RESULT_REGISTER_WIDTH = 20;
 
 
@@ -26,8 +28,10 @@ public:
   ResultRegisterSerializer(CCB *ccb, int tmb_slot);
 
   /// \return the result of serial read of TMB status bits
-  unsigned long long int read(int length = TMB_RESULT_REGISTER_WIDTH);
-
+  uint32_t read(int length = TMB_RESULT_REGISTER_WIDTH);
+  
+  /// set verbosoty level (it's set to 0 by default in constructor)
+  void setVerbose(int level);
 
 private:
 
@@ -37,13 +41,16 @@ private:
   /// TMB slot
   int tmbSlot_;
 
+  /// verbosity level
+  int verbose_;
+
   /// LUT for the TMB slot # -> sequential index association
   static int slotToIndexLUT_[22];
 
   // bit shifting amounts
   int shiftCsra2Alct_;
   int shiftCsra2Tmb_;
-  int shiftCsra3Tmb_;
+  int shiftCsra3Tmb_;  
 };
 
 

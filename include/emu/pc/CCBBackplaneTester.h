@@ -75,6 +75,22 @@ private:
    * CCB_reserved3 - write through CSRB6, read through RR0
    */
   bool TestCCBReserved();
+  
+  /**
+   * Write various values into CSRB3 (CCB data bus),
+   * read back through TMB's result register, and compare.
+   *
+   * Also, the TMB command that reads the data bus value (bits [7:0] out of 12 data bits), 
+   * sets one of 4 more bits (bits [11:8]) if status of some clocks is not good.
+   * Test checks if these clock statuses are zero.
+   */
+  bool TestDataBus();
+  
+  /**
+   * Read the value of ccb_clock40_enable (or ccb_rx0) multiple times.
+   * Check that we see sufficient variety in the values.
+   */
+  bool TestCCBClock40();
 
   // holds CCB and TMB pointers
   CCB * ccb_;

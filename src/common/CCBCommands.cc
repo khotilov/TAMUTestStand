@@ -90,7 +90,7 @@ void NTimesWriteRegister(CCB* ccb, int n, int reg, int value)
 
 void Write5ReservedBits(CCB* ccb, int &value)
 {
-  // make sure the value we a writing is 5 bits wide!
+  // make sure the value we are writing is 5 bits wide!
   value &= 0x1F;
 
   // read the register contents first
@@ -134,6 +134,7 @@ uint32_t LoadAndReadResutRegister(CCB* ccb, int tmb_slot, int load_command)
 {
   ccb->WriteRegister(CCB_CSRB2_COMMAND_BUS, load_command);
   ResultRegisterSerializer reader(ccb, tmb_slot);
+  //reader.setVerbose(1);
   return reader.read();
 }
 
