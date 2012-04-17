@@ -25,7 +25,7 @@ ABBREVIATE_BRIEF       = "The $name class" \
 ALWAYS_DETAILED_SEC    = NO
 INLINE_INHERITED_MEMB  = NO
 FULL_PATH_NAMES        = YES
-STRIP_FROM_PATH        = /home/cscdev/TriDAS/emu/emuDCS/
+STRIP_FROM_PATH        = /home/cscdev/TriDAS/emu/emuDCS/TAMUTestStand/
 STRIP_FROM_INC_PATH    = 
 SHORT_NAMES            = NO
 JAVADOC_AUTOBRIEF      = NO
@@ -82,7 +82,7 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = /home/cscdev/TriDAS/emu/emuDCS
+INPUT                  = /home/cscdev/TriDAS/emu/emuDCS/TAMUTestStand
 FILE_PATTERNS          = *.c \
                          *.cc \
                          *.cxx \
@@ -125,10 +125,12 @@ FILE_PATTERNS          = *.c \
                          *.MM \
                          *.PY
 RECURSIVE              = YES
-EXCLUDE                = x86_* \
+EXCLUDE                = lib/* \
+			 src/linux/* \
+			 x86_* \
                          *.d
 EXCLUDE_SYMLINKS       = NO
-EXCLUDE_PATTERNS       = 
+EXCLUDE_PATTERNS       = *.d
 EXAMPLE_PATH           = 
 EXAMPLE_PATTERNS       = *
 EXAMPLE_RECURSIVE      = NO
@@ -246,7 +248,7 @@ PERL_PATH              = /usr/bin/perl
 #---------------------------------------------------------------------------
 # Configuration options related to the dot tool   
 #---------------------------------------------------------------------------
-CLASS_DIAGRAMS         = NO
+CLASS_DIAGRAMS         = YES
 HIDE_UNDOC_RELATIONS   = YES
 HAVE_DOT               = YES
 CLASS_GRAPH            = YES
