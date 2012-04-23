@@ -54,16 +54,25 @@ private:
   bool TestDummy() {return true;}
 
   /**
-   * Send various pulse triggering commands through VMS interface and
-   * check that for each command only this command's fit blag is set
-   * in the pulse counter flags register.
+   * Write to DataBus and check that it is cleared after L1Reset signal is sent.
+   * Also check that the total counter and the counter flag bits are cleared by L1Reset.
+   */
+  bool TestL1Reset();
+  
+  /**
+   * Write to DataBus and check that it is cleared after HardReset signal is sent.
+   */
+  bool TestTMBHardReset();
+ 
+  /**
+   * Send various pulse triggering commands through VMS interface and check that
+   * for each command only this command's fit blag is set in the pulse counter flags register.
    * Also check the counter values against expected  numbers.
    */
   bool TestPulseCounters();
 
   /**
-   * Write various values into CSRB2 (command bus),
-   * read back through TMB's result register, and compare
+   * Write various values into CSRB2 (command bus), read back through TMB's result register, and compare
    */
   bool TestCommandBus();
 
@@ -75,6 +84,16 @@ private:
    * CCB_reserved3 - write through CSRB6, read through RR0
    */
   bool TestCCBReserved();
+  
+  /**
+   * Test TMB_reserved_out[0:2] connections (CSRB6[9:7]) by reading them back from RR bits [15:13]
+   */
+  bool TestTMBReservedOut();
+  
+  /**
+   * Test DMB_reserved_out[0:4] connections (CSRB6[14:10]) by reading them back from CSRB11 bits [7:3]
+   */
+  bool TestDMBReservedOut();
   
   /**
    * Write various values into CSRB3 (CCB data bus),
@@ -91,6 +110,7 @@ private:
    * Check that we see sufficient variety in the values.
    */
   bool TestCCBClock40();
+
 
   // holds CCB and TMB pointers
   CCB * ccb_;

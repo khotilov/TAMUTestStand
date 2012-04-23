@@ -139,7 +139,7 @@ uint32_t LoadAndReadResutRegister(CCB* ccb, int tmb_slot, int load_command)
 }
 
 
-uint32_t ResutRegisterCommand(uint32_t rr)
+uint32_t ResultRegisterCommand(uint32_t rr)
 {
   // currently, it's first 8 bits
   return rr & 0xFF;

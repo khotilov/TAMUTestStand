@@ -115,10 +115,11 @@ void CCBBackplaneTestModule::CCBBackplaneTestsPage(xgi::Input * in, xgi::Output 
 
   *out << tr().set("ALIGN","center");
 
+  TestButton(tmb, "L1Reset", "L1Reset", out);
+  TestButton(tmb, "TMB HardReset", "TMBHardReset", out);
   TestButton(tmb, "Pulse Counters", "PulseCounters", out);
   TestButton(tmb, "Command Bus", "CommandBus", out);
   TestButton(tmb, "Data Bus", "DataBus", out);
-  TestButton(tmb, "Clock 40", "CCBClock40", out);
 
   *out << tr();
 
@@ -126,7 +127,10 @@ void CCBBackplaneTestModule::CCBBackplaneTestsPage(xgi::Input * in, xgi::Output 
 
   *out << tr().set("ALIGN","center");
 
+  TestButton(tmb, "Clock 40", "CCBClock40", out);
   TestButton(tmb, "CCB_reserved", "CCBReserved", out);
+  TestButton(tmb, "TMB_reserved_out", "TMBReservedOut", out);
+  TestButton(tmb, "DMB_reserved_out", "DMBReservedOut", out);
   TestButton(tmb, "Dummy", "Dummy", out);
 
   *out << tr();

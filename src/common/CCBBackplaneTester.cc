@@ -68,13 +68,16 @@ void CCBBackplaneTester::CopyFrom(const CCBBackplaneTester &other)
 void CCBBackplaneTester::RegisterTestProcedures()
 {
   cout<<__PRETTY_FUNCTION__<<endl;
-
+  RegisterTheTest("L1Reset", boost::bind( &CCBBackplaneTester::TestL1Reset, this));
+  RegisterTheTest("TMBHardReset", boost::bind( &CCBBackplaneTester::TestTMBHardReset, this));
   RegisterTheTest("PulseCounters", boost::bind( &CCBBackplaneTester::TestPulseCounters, this));
   RegisterTheTest("CommandBus", boost::bind( &CCBBackplaneTester::TestCommandBus, this));
   RegisterTheTest("CCBReserved", boost::bind( &CCBBackplaneTester::TestCCBReserved, this));
-  RegisterTheTest("Dummy", boost::bind( &CCBBackplaneTester::TestDummy, this));
+  RegisterTheTest("TMBReservedOut", boost::bind( &CCBBackplaneTester::TestTMBReservedOut, this));
+  RegisterTheTest("DMBReservedOut", boost::bind( &CCBBackplaneTester::TestDMBReservedOut, this));
   RegisterTheTest("DataBus", boost::bind( &CCBBackplaneTester::TestDataBus, this));
   RegisterTheTest("CCBClock40", boost::bind( &CCBBackplaneTester::TestCCBClock40, this));
+  RegisterTheTest("Dummy", boost::bind( &CCBBackplaneTester::TestDummy, this));
 }
 
 
@@ -106,6 +109,104 @@ void CCBBackplaneTester::PrepareHWForTest()
 ////////////////////////////////////////////////////
 // Actual tests:
 ////////////////////////////////////////////////////
+
+bool CCBBackplaneTester::TestL1Reset()
+{
+  bool result = true;
+  
+  int Niter = 100;
+  
+  for(int i=0; i<Niter; ++i)
+  {
+    // write DataBus with test value
+    ccb_->WriteRegister(CCB_CSRB3_DATA_BUS, 0xFF);
+    
+    // do the L1 reset
+    ccb_->WriteRegister(CCB_VME_L1RESET, 1);
+    
+    // read the counter & the counter flags to check that they are 0 after the L1Reset
+    int counter_flags_read = ResultRegisterData( LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTERS_FLAG) );
+    int counter_read = ResultRegisterData( LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTER) );
+
+    // compare data bus from result register to test value written to DataBus
+    result &= CompareValues(out(), "L1Reset counter flags", counter_flags_read, 0, true);
+    result &= CompareValues(out(), "L1Reset counter", counter_read, 0, true);
+    
+    // read back DataBus from result register
+    uint32_t rr_read = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_DATA_BUS);
+    int command_code = ResultRegisterCommand(rr_read);
+    uint32_t data_bus_read = ResultRegisterData(rr_read);
+    
+    bool check = ((data_bus_read == 0) && 
+                  (command_code == CCB_COM_RR_LOAD_DATA_BUS) &&
+                  (counter_flags_read == 0) &&
+                  (counter_read == 0) );
+    
+    cout<< __func__ << " write/read " << ( check ? "OK ": "BAD ") << " = " << hex << 0 << " / " << data_bus_read
+        << " Command code: " << command_code
+        << " Counter flags: " << counter_flags_read
+        << " Counter: " << dec << counter_read <<endl;
+    
+    // compare data bus from result register to test value written to DataBus
+    result &= CompareValues(out(), "L1Reset DataBus", data_bus_read & 0xFF, 0, true);
+    result &= CompareValues(out(), "L1Reset Command Code", command_code, CCB_COM_RR_LOAD_DATA_BUS, true);
+    
+    usleep(50);
+  }
+  
+  cout<< __func__ <<" result "<< result <<endl;
+  
+  return result;
+}
+
+
+bool CCBBackplaneTester::TestTMBHardReset()
+{
+  bool result = true;
+  
+  int Niter = 5;
+  
+  for(int i=0; i<Niter; ++i)
+  {
+    // write DataBus with test value
+    ccb_->WriteRegister(CCB_CSRB3_DATA_BUS, 0xFF);
+    
+    ccb_->WriteRegister(CCB_VME_TMB_HARD_RESET, 1);
+    
+    sleep(3);
+    
+    // read counter & counter flags to check that they are 0
+    int counter_flags_read = ResultRegisterData( LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTERS_FLAG) );
+    int counter_read = ResultRegisterData( LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTER) );
+
+    // compare data bus from result register to test value written to DataBus
+    result &= CompareValues(out(), "TMBHardReset counter flags", counter_flags_read, 0, true);
+    result &= CompareValues(out(), "TMBHardReset counter", counter_read, 0, true);
+    
+    // read back DataBus from result register
+    uint32_t rr_read = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_DATA_BUS);
+    int command_code = ResultRegisterCommand(rr_read);
+    uint32_t data_bus_read = ResultRegisterData(rr_read);
+    
+    bool check = ((data_bus_read == 0) && 
+                  (command_code == CCB_COM_RR_LOAD_DATA_BUS) &&
+                  (counter_flags_read == 0) &&
+                  (counter_read == 0) );
+    
+    cout<< __func__ <<" write/read "
+      << ( check ? "OK ": "BAD ") << " = " << hex << 0 << " / " << data_bus_read <<" Command code: "<<
+    command_code << " Counter flags: " << counter_flags_read << " Counter: " <<dec << counter_read <<endl;
+    
+    // compare data bus from result register to test value written to DataBus
+    result &= CompareValues(out(), "TMBHardReset DataBus", data_bus_read & 0xFF, 0, true);
+    result &= CompareValues(out(), "TMBHardReset Command Code", command_code, CCB_COM_RR_LOAD_DATA_BUS, true);
+
+  }
+  
+  cout<< __func__ <<" result "<< result <<endl;
+  
+  return result;
+}
 
 bool CCBBackplaneTester::TestPulseCounters()
 {
@@ -192,18 +293,18 @@ bool CCBBackplaneTester::TestCommandBus()
 
   int Niter = 100;
 
+  // a set of 8-bit patterns that Jason have found to have good coverage
   uint32_t reg[] = {0x05, 0x0A, 0x14, 0x28, 0x51, 0xA2, 0x60, 0x80};
 
   // walk over the range of values of the CSRB2 register
   for (int j = 0; j < 8; ++j)
   {
+    cout << endl << __func__ << " testing CSRB2 " << hex << reg[j] << endl << endl;
 
-    cout<<endl<< __func__ <<" testing CSRB2 "<<hex<<reg[j]<<endl<<endl;
-
-    for (int i=0; i<Niter; ++i)
+    for (int i = 0; i < Niter; ++i)
     {
       // load result register with the command code, read it back, and extract the command field
-      uint32_t command_code = ResutRegisterCommand( LoadAndReadResutRegister(ccb_, tmb_->slot(), reg[j]) );
+      uint32_t command_code = ResultRegisterCommand( LoadAndReadResutRegister(ccb_, tmb_->slot(), reg[j]) );
 
       cout<< __func__ <<" write/read "<< (command_code == reg[j]? "OK ": "BAD ") << " = " << reg[j] << " / " << command_code <<endl;
 
@@ -292,18 +393,107 @@ bool CCBBackplaneTester::TestCCBReserved()
 }
 
 
+bool CCBBackplaneTester::TestTMBReservedOut()
+{
+  bool result = true;
+
+  int Niter = 20;
+
+  // read the current value of CSRB6
+  CSRB6Bits csrb6;
+  csrb6.r = ccb_->ReadRegister(CCB_CSRB6);
+
+  // walk over the range of values of 3 bits of TMB_reserved_out (not including 111)
+  for (uint32_t pattern = 0; pattern < 7; ++pattern)
+  {
+    cout << endl << __func__ << " testing TMB_reserved_out " << hex << pattern << endl << endl;
+    
+    // change the value of the TMB_reserved_out bits
+    csrb6.TMB_reserved_out = pattern;
+
+    for (int i=0; i<Niter; ++i)
+    {
+      // load CSRB6 with the test value
+      ccb_->WriteRegister(CCB_CSRB6, csrb6.r);
+
+      // read back from result register
+      RR0Bits rr;
+      rr.r = LoadAndReadResutRegister(ccb_, tmb_->slot(), 0);
+
+      cout<< __func__ << " write/read " << (pattern == rr.TMB_reserved_out ? "OK " : "BAD ")
+          << " = " << pattern  << " / " << rr.TMB_reserved_out << endl;
+
+      // compare the the result from written value
+      result &= CompareValues(out(), "TMBReservedOut", rr.TMB_reserved_out, pattern, true);
+
+      // issue L1Reset after each iteration
+      ccb_->WriteRegister(CCB_VME_L1RESET, 1);
+    }
+  }
+
+  cout<< __func__ <<" result "<< result <<endl;
+
+  return result;
+}
+
+
+bool CCBBackplaneTester::TestDMBReservedOut()
+{
+  bool result = true;
+
+  int Niter = 100;
+
+  // read the current value of CSRB6
+  CSRB6Bits csrb6;
+  csrb6.r = ccb_->ReadRegister(CCB_CSRB6);
+
+  // walk over the range of values of 5 bits of TMB_reserved_out, not including 11111
+  for (uint32_t pattern = 0; pattern < 31; ++pattern)
+  {
+    cout << endl << __func__ << " testing DMB_reserved_out " << hex << pattern << endl << endl;
+    
+    // change the value of the DMB_reserved_out bits
+    csrb6.DMB_reserved_out = pattern;
+
+    for (int i=0; i<Niter; ++i)
+    {
+      // load CSRB6 with the test value
+      ccb_->WriteRegister(CCB_CSRB6, csrb6.r);
+      
+      // read back from CSRB11
+      CSRB11Bits csrb11;
+      csrb11.r = ccb_->ReadRegister(CCB_CSRB11);
+
+      cout<< __func__ <<" write/read "<< (pattern == csrb11.TMB_reserved_in? "OK ": "BAD ")
+          << " = " << pattern << " / " << csrb11.TMB_reserved_in <<endl;
+
+      // compare the the result from written value
+      result &= CompareValues(out(), "DMBReservedOut", csrb11.TMB_reserved_in, pattern, true);
+
+      // issue L1Reset after each iteration
+      ccb_->WriteRegister(CCB_VME_L1RESET, 1);
+    }
+  }
+
+  cout<< __func__ <<" result "<< result <<endl;
+
+  return result;
+}
+
+
 bool CCBBackplaneTester::TestDataBus()
 {
   bool result = true;
   
   int Niter = 20;
   
+  // a set of 8-bit patterns that Jason have found to have good coverage
   uint32_t reg[] = {0x05, 0x0A, 0x14, 0x28, 0x51, 0xA2, 0x60, 0x80};
   
   // walk over the range of values of the DataBus (CSRB2)
-  for(int j=0; j<8; ++j)
+  for (int j = 0; j < 8; ++j)
   {
-    for(int i=0; i<Niter; ++i)
+    for (int i = 0; i < Niter; ++i)
     {
       // write DataBus with test value
       ccb_->WriteRegister(CCB_CSRB3_DATA_BUS, reg[j]);
@@ -311,7 +501,8 @@ bool CCBBackplaneTester::TestDataBus()
       // read back DataBus from result register
       uint32_t data_bus_read = ResultRegisterData( LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_DATA_BUS) );
       
-      cout<< __func__ <<" write/read "<< (data_bus_read == reg[j]? "OK ": "BAD ") << " = " << hex << reg[j] << " / " << data_bus_read << dec <<endl;
+      cout<< __func__ <<" write/read "<< (data_bus_read == reg[j]? "OK ": "BAD ")
+          << " = " << hex << reg[j] << " / " << data_bus_read << dec <<endl;
       
       // compare data bus from result register to test value written to DataBus
       result &= CompareValues(out(), "DataBus", data_bus_read & 0xFF, reg[j], true);
@@ -321,7 +512,7 @@ bool CCBBackplaneTester::TestDataBus()
     }
   }
   
-  cout<< __func__ <<" result "<< result <<endl;
+  cout << __func__ << " result " << result << endl;
   
   return result;
 }
@@ -329,29 +520,34 @@ bool CCBBackplaneTester::TestDataBus()
 
 bool CCBBackplaneTester::TestCCBClock40()
 {
+  bool result = true;
+
   int Niter = 250;
+
   double tolerance = .05;
   
   int repeat_count = 0;
-  uint32_t prev_val = ResultRegisterData( LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_CCB_RX0) );
+
+  uint32_t prev_clock_val = ResultRegisterData( LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_CCB_RX0) );
   for(int i=1; i<Niter; ++i)
   {
-    cout << " clock_val " << prev_val << endl;
+    cout << " clock_val " << prev_clock_val << endl;
     
     // load ccb_clock40_enable or ccb_rx0 value into RR
     uint32_t clock_val = ResultRegisterData( LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_CCB_RX0) );
     
-    if (clock_val == prev_val)
+    if (clock_val == prev_clock_val)
     {
       cout << i << " repeat value" << endl;
       ++repeat_count;
     }
-    prev_val = clock_val;
+    prev_clock_val = clock_val;
   }
   
-  bool result = CompareValues(out(), "CCBClock40", (float)(Niter-repeat_count), (float)Niter, tolerance, true);
+  result = CompareValues(out(), "CCBClock40", (float)(Niter - repeat_count), (float)Niter, tolerance, false);
   
-  cout<< __func__ <<" iterations/ unique values "<< (result? "OK ": "BAD ") << " = " << dec << Niter << " / " << (Niter-repeat_count) <<endl;
+  cout<< __func__ << " iterations/ unique values " << (result ? "OK " : "BAD ")
+      << " = " << dec << Niter << " / " << (Niter - repeat_count) << endl;
   
   return result;
 

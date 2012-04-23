@@ -86,12 +86,8 @@ union RR0Bits
     unsigned int CCB_reserved2 : 1;
     unsigned int CCB_reserved3 : 1;
     unsigned int TMB_reserved0 : 1; // #12
-    unsigned int TMB_reserved_out0 : 1; // #13
-    unsigned int TMB_reserved_out1 : 1; //
-    unsigned int TMB_reserved_out2 : 1; //
-    unsigned int DMB_reserved_in0 : 1; // #16
-    unsigned int DMB_reserved_in1 : 1; //
-    unsigned int DMB_reserved_in2 : 1; //
+    unsigned int TMB_reserved_out : 3; // #13
+    unsigned int DMB_reserved_in : 3; // #16
     unsigned int DMB_L1A_release : 1; // #19
   };
 };
@@ -110,14 +106,8 @@ union CSRB6Bits
     unsigned int MPC_reserved1 : 1; //
     unsigned int DMB_reserved0 : 1; // #5
     unsigned int DMB_reserved1 : 1; //
-    unsigned int TMB_reserved_out0 : 1; // #7
-    unsigned int TMB_reserved_out1 : 1; //
-    unsigned int TMB_reserved_out2 : 1; //
-    unsigned int DMB_reserved_out0 : 1; // #10
-    unsigned int DMB_reserved_out1 : 1; //
-    unsigned int DMB_reserved_out2 : 1; //
-    unsigned int DMB_reserved_out3 : 1; //
-    unsigned int DMB_reserved_out4 : 1; //
+    unsigned int TMB_reserved_out : 3; // #9:7
+    unsigned int DMB_reserved_out : 5; // #15:10
   };
 };
 
@@ -128,14 +118,8 @@ union CSRB11Bits
   unsigned int r; // value of the CSRB11 register
 
   struct {
-    unsigned int DMB_reserved_in0 : 1; // #0
-    unsigned int DMB_reserved_in1 : 1; //
-    unsigned int DMB_reserved_in2 : 1; //
-    unsigned int TMB_reserved_in0 : 1; // #3
-    unsigned int TMB_reserved_in1 : 1; //
-    unsigned int TMB_reserved_in2 : 1; //
-    unsigned int TMB_reserved_in3 : 1; //
-    unsigned int TMB_reserved_in4 : 1; //
+    unsigned int DMB_reserved_in : 3; // #2:0
+    unsigned int TMB_reserved_in : 5; // #7:3
   };
 };
 
@@ -172,7 +156,7 @@ void WriteTMBReserved0Bit(CCB* ccb, int value);
 uint32_t LoadAndReadResutRegister(CCB* ccb, int tmb_slot, int load_command);
 
 /// extract command code from TMB result register value
-uint32_t ResutRegisterCommand(uint32_t rr);
+uint32_t ResultRegisterCommand(uint32_t rr);
 
 /// extract the data from TMB result register value
 uint32_t ResultRegisterData(uint32_t rr);
