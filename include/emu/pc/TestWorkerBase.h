@@ -46,7 +46,7 @@ public:
 
   /// Getter for the result of a test with specific label.
   /// Note: the results values are first initialized to -1 in the constructor.
-  /// Running the tests through RunTest would set the corresponding result values to either 0 (not pass) or 1 (pass).
+  /// Running the tests through RunTest would set the corresponding result values to either 0 (pass) or >0 (error code).
   int GetTestResult(const std::string &test);
 
   /// setter for the result of a test with specific label
@@ -61,7 +61,7 @@ public:
   /// Initially, the internal out_ output is set to std::cout in the constructor.
   virtual void RedirectOutput(std::ostream * output);
 
-  /// reference accessor to the output stream
+  /// reference accessor to the current output stream
   std::ostream & out() { return *out_; }
 
 protected:
@@ -78,6 +78,9 @@ protected:
   /// Register the collection of test procedures by calling RegisterTheTest for each specific test.
   /// Has to be implemented by every subclass!
   virtual void RegisterTestProcedures() = 0;
+
+  /// Converts test procedure name to corresponding test label according to a set convention.
+  std::string TestLabelFromProcedureName(const std::string &proc);
 
   /// Hardware preparation procedure that has to be performed before every test.
   virtual void PrepareHWForTest();

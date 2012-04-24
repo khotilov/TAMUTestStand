@@ -11,6 +11,7 @@
 #include "emu/pc/CCBCommands.h"
 #include "emu/pc/TestUtils.h"
 #include "emu/utils/SimpleTimer.h"
+#include "emu/exception/Exception.h"
 
 // system includes
 #include <iostream>
@@ -115,33 +116,28 @@ int TestWorkerBase::RunTest(const std::string &test)
     out() << "------------------------------" << endl;
     MessageOK(out(), "Status of All tests ... ", result);
   }
-  // make sure that the test label was registerd
-  else if (testProcedures_.find(test) == testProcedures_.end())
+  else if (testProcedures_.find(test) == testProcedures_.end()) // make sure that the test label was registerd
   {
     std::stringstream s;
-    s << __func__<<": WARNING! test with label "<<test<<" was not registered!"<<endl;
+    s << __func__ << ": WARNING! test with label " << test << " was not registered!" << endl;
     out() << s.str();
     cout << s.str();
     return 0;
   }
   else
   {
-    out() << "Test with label "<< test << " ... start" << endl;
-
+    out() << "Test with label " << test << " ... start" << endl;
     if (test != "Dummy")
     {
       PrepareHWForTest();
     }
-
     // run the test
     result = testProcedures_[test]();
     testResults_[test] = result;
-
     MessageOK(out(), "Test with label " + test + " status ... ", result);
   }
-
+  
   cout << "Time: " << timer.sec() << "sec for test with label " << test << endl;
-
   return result;
 }
 
@@ -149,14 +145,31 @@ int TestWorkerBase::RunTest(const std::string &test)
 void TestWorkerBase::HardReset()
 {
   out() << "TestWorkerBase: Hard reset through CCB" << endl;
-  if ( ccb_ )
+  if (ccb_)
   {
     ccb_->hardReset();
     usleep(5000);
   }
   else
   {
-    out() << __PRETTY_FUNCTION__ << "No CCB defined!" << endl;
+    out() << __PRETTY_FUNCTION__ << " No CCB defined!" << endl;
+    XCEPT_RAISE(emu::exception::HardwareException, "zero pointer to CCB");
+  }
+}
+
+
+std::string TestWorkerBase::TestLabelFromProcedureName(const std::string& proc)
+{
+  // the current convention is that test procedure names start with "Test",
+  // and the rest of the name is a test label
+  if (proc.substr(0,4) == "Test")
+  {
+    return proc.substr(4);
+  }
+  else
+  {
+    cout << __func__ << " !!!!! WARNING !!!! test procedure name doesn't start with Test: " << proc <<endl;
+    return proc;
   }
 }
 
@@ -169,7 +182,8 @@ void TestWorkerBase::L1Reset()
   }
   else
   {
-    out() << __PRETTY_FUNCTION__ << "No CCB defined!" << endl;
+    out() << __PRETTY_FUNCTION__ << " No CCB defined!" << endl;
+    XCEPT_RAISE(emu::exception::HardwareException, "zero pointer to CCB");
   }
 }
 
@@ -186,7 +200,8 @@ void TestWorkerBase::PrepareHWForTest()
   }
   else
   {
-    out() << __PRETTY_FUNCTION__ << "No CCB defined!" << endl;
+    out() << __PRETTY_FUNCTION__ << " No CCB defined!" << endl;
+    XCEPT_RAISE(emu::exception::HardwareException, "zero pointer to CCB");
   }
 }
 

@@ -215,7 +215,14 @@ void CCBBackplaneTestModule::CCBBackplaneRunTest(xgi::Input * in, xgi::Output * 
 
   tests_[tmbN_].RedirectOutput(&testOutputs_[tmbN_]);
 
-  tests_[tmbN_].RunTest(test_label);
+  try
+  {
+    tests_[tmbN_].RunTest(test_label);
+  }
+  catch (emu::exception::Exception &e)
+  {
+    *out << e.toHTML();
+  }
 
   tests_[tmbN_].RedirectOutput(&cout);
 
