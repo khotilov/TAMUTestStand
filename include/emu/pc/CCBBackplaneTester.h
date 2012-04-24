@@ -6,9 +6,6 @@
 
 namespace emu { namespace pc {
 
-class TMB;
-class CCB;
-
 
 /** class CCBBackplaneTester
  *
@@ -31,12 +28,6 @@ public:
 
   virtual ~CCBBackplaneTester();
 
-  void SetTMB(TMB * tmb) {tmb_ = tmb;}
-  void SetCCB(CCB * ccb) {ccb_ = ccb;}
-
-  /// issue HardReset
-  void Reset();
-
 private:
 
   /// helper copying method for internal use by the copy c-tor and the assignment operator
@@ -45,10 +36,9 @@ private:
   /// register all the test procedures
   void RegisterTestProcedures();
 
-  /// implementation of the base class method
-  void PrepareHWForTest();
 
-  // actual test procedures
+  // Actual test procedures below...
+  // They are implemented as private, and should be accessed only through the interface offered by TestWorkerBase.
 
   /// dummy test
   bool TestDummy() {return true;}
@@ -110,11 +100,6 @@ private:
    * Check that we see sufficient variety in the values.
    */
   bool TestCCBClock40();
-
-
-  // holds CCB and TMB pointers
-  CCB * ccb_;
-  TMB * tmb_;
 };
 
 

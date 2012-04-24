@@ -9,13 +9,17 @@
 
 namespace emu { namespace pc {
 
+class TMB;
+class CCB;
+
 
 /** class TestWorkerBase
  *
- * A base class that contains hardware-independent testing functionality like
+ * A base class that contains generic TMB testing functionality like
  *  - registering a test procedur
  *  - running the test(s)
  *  - keeping log of test output
+ *  - resets
  * which should be reused by its subclasses.
  *
  * Notes:
@@ -33,6 +37,9 @@ public:
   TestWorkerBase();
 
   virtual ~TestWorkerBase();
+
+  void SetTMB(TMB * tmb) {tmb_ = tmb;}
+  void SetCCB(CCB * ccb) {ccb_ = ccb;}
 
   /// returns labels of available registered tests
   std::vector<std::string> GetTestLabels();
@@ -72,8 +79,14 @@ protected:
   virtual void RegisterTestProcedures() = 0;
 
   /// Hardware preparation procedure that has to be performed before every test.
-  /// Has to be implemented by every subclass!
-  virtual void PrepareHWForTest() = 0;
+  virtual void PrepareHWForTest();
+
+  /// issue HardReset
+  virtual void Reset();
+
+  // hold CCB and TMB pointers
+  CCB * ccb_;
+  TMB * tmb_;
 
 private:
 

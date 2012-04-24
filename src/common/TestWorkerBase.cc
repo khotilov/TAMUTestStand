@@ -6,6 +6,9 @@
 #include "emu/pc/TestWorkerBase.h"
 
 // Emu includes
+#include "emu/pc/TMB.h"
+#include "emu/pc/CCB.h"
+#include "emu/pc/CCBCommands.h"
 #include "emu/pc/TestUtils.h"
 #include "emu/utils/SimpleTimer.h"
 
@@ -24,7 +27,9 @@ using std::string;
 
 
 TestWorkerBase::TestWorkerBase()
-: out_(&cout)
+: ccb_(0)
+, tmb_(0)
+, out_(&cout)
 {}
 
 
@@ -138,6 +143,31 @@ bool TestWorkerBase::RunTest(const std::string &test)
   cout << "Time: " << timer.sec() << "sec for test with label " << test << endl;
 
   return result;
+}
+
+
+void TestWorkerBase::Reset()
+{
+  out() << "TestWorkerBase: Hard reset through CCB" << endl;
+  if ( ccb_ )
+  {
+    ccb_->hardReset();
+    usleep(5000);
+  }
+  else
+  {
+    out() << "No CCB defined!" << endl;
+  }
+}
+
+
+void TestWorkerBase::PrepareHWForTest()
+{
+  // make sure CCB is in FPGA mode
+  SetFPGAMode(ccb_);
+
+  // issue L1Reset to reset the counters
+  ccb_->WriteRegister(CCB_VME_L1RESET, 1);
 }
 
 

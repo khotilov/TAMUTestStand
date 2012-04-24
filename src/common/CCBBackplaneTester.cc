@@ -31,8 +31,6 @@ using std::dec;
 
 
 CCBBackplaneTester::CCBBackplaneTester()
-: ccb_(0)
-, tmb_(0)
 {
   RegisterTestProcedures();
 }
@@ -56,9 +54,6 @@ CCBBackplaneTester & CCBBackplaneTester::operator=(const CCBBackplaneTester &rhs
 
 void CCBBackplaneTester::CopyFrom(const CCBBackplaneTester &other)
 {
-  ccb_ = other.ccb_;
-  tmb_ = other.tmb_;
-
   // the real need for the user defined copy c-tor and assignment comes from here:
   // we need to make sure that the test procedures are properly bound to this object.
   RegisterTestProcedures();
@@ -78,31 +73,6 @@ void CCBBackplaneTester::RegisterTestProcedures()
   RegisterTheTest("DataBus", boost::bind( &CCBBackplaneTester::TestDataBus, this));
   RegisterTheTest("CCBClock40", boost::bind( &CCBBackplaneTester::TestCCBClock40, this));
   RegisterTheTest("Dummy", boost::bind( &CCBBackplaneTester::TestDummy, this));
-}
-
-
-void CCBBackplaneTester::Reset()
-{
-  out() << "CCBBackplaneTester: Hard reset through CCB" << endl;
-  if ( ccb_ )
-  {
-    ccb_->hardReset();
-    usleep(5000);
-  }
-  else
-  {
-    out() << "No CCB defined!" << endl;
-  }
-}
-
-
-void CCBBackplaneTester::PrepareHWForTest()
-{
-  // make sure CCB is in FPGA mode
-  SetFPGAMode(ccb_);
-
-  // issue L1Reset to reset the counters
-  ccb_->WriteRegister(CCB_VME_L1RESET, 1);
 }
 
 
