@@ -22,7 +22,7 @@ bool CompareValues(std::ostream & out, const std::string &test, float testval, f
 bool CompareValues(std::ostream & out, const std::string &test, int testval, int compareval, bool equal, bool print_pass = false);
 
 /// Formatted test result printout
-void MessageOK(std::ostream & out, const std::string &test, bool testbool);
+void MessageOK(std::ostream & out, const std::string &test, int errcode);
 
 
 }} // namespaces

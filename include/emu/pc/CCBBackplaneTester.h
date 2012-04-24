@@ -41,30 +41,30 @@ private:
   // They are implemented as private, and should be accessed only through the interface offered by TestWorkerBase.
 
   /// dummy test
-  bool TestDummy() {return true;}
+  int TestDummy() {return 0;}
 
   /**
    * Write to DataBus and check that it is cleared after L1Reset signal is sent.
    * Also check that the total counter and the counter flag bits are cleared by L1Reset.
    */
-  bool TestL1Reset();
+  int TestL1Reset();
   
   /**
    * Write to DataBus and check that it is cleared after HardReset signal is sent.
    */
-  bool TestTMBHardReset();
+  int TestTMBHardReset();
  
   /**
    * Send various pulse triggering commands through VMS interface and check that
    * for each command only this command's fit blag is set in the pulse counter flags register.
    * Also check the counter values against expected  numbers.
    */
-  bool TestPulseCounters();
+  int TestPulseCounters();
 
   /**
    * Write various values into CSRB2 (command bus), read back through TMB's result register, and compare
    */
-  bool TestCommandBus();
+  int TestCommandBus();
 
   /**
    * Test CCB_reserved[0:3] connections
@@ -73,17 +73,17 @@ private:
    * CCB_reserved2 - write through CSRB6, read through RR0
    * CCB_reserved3 - write through CSRB6, read through RR0
    */
-  bool TestCCBReserved();
+  int TestCCBReserved();
   
   /**
    * Test TMB_reserved_out[0:2] connections (CSRB6[9:7]) by reading them back from RR bits [15:13]
    */
-  bool TestTMBReservedOut();
+  int TestTMBReservedOut();
   
   /**
    * Test DMB_reserved_out[0:4] connections (CSRB6[14:10]) by reading them back from CSRB11 bits [7:3]
    */
-  bool TestDMBReservedOut();
+  int TestDMBReservedOut();
   
   /**
    * Write various values into CSRB3 (CCB data bus),
@@ -93,13 +93,13 @@ private:
    * sets one of 4 more bits (bits [11:8]) if status of some clocks is not good.
    * Test checks if these clock statuses are zero.
    */
-  bool TestDataBus();
+  int TestDataBus();
   
   /**
    * Read the value of ccb_clock40_enable (or ccb_rx0) multiple times.
    * Check that we see sufficient variety in the values.
    */
-  bool TestCCBClock40();
+  int TestCCBClock40();
 };
 
 

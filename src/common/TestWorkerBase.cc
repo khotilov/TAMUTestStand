@@ -89,24 +89,24 @@ void TestWorkerBase::SetTestResult(const std::string &test, int result)
 }
 
 
-bool TestWorkerBase::RunTest(const std::string &test)
+int TestWorkerBase::RunTest(const std::string &test)
 {
   emu::utils::SimpleTimer timer;
 
-  bool result = true;
+  int result = 0;
 
   // first, special case of running all tests:
   if (test == "All")
   {
-    //Reset(); // WARNING: doing hard reset makes the 1st CommandBus test fail... why???
+    //HardReset(); // WARNING: doing hard reset makes the 1st CommandBus test fail... why???
 
     // run All test in the order they were registered:
     for (std::vector<std::string>::iterator itest = testLabels_.begin(); itest != testLabels_.end(); ++itest)
     {
       //if (*itest == "Dummy") continue;
 
-      // run the test
-      result &= RunTest(*itest);
+      // run the test, if any test fails (>0), all fail
+      result |= RunTest(*itest);
 
       // give it a little break before the next test
       usleep(50);
@@ -122,7 +122,7 @@ bool TestWorkerBase::RunTest(const std::string &test)
     s << __func__<<": WARNING! test with label "<<test<<" was not registered!"<<endl;
     out() << s.str();
     cout << s.str();
-    return 1;
+    return 0;
   }
   else
   {
@@ -156,18 +156,25 @@ void TestWorkerBase::Reset()
   }
   else
   {
-    out() << "No CCB defined!" << endl;
+    out() << __PRETTY_FUNCTION__ << "No CCB defined!" << endl;
   }
 }
 
 
 void TestWorkerBase::PrepareHWForTest()
 {
-  // make sure CCB is in FPGA mode
-  SetFPGAMode(ccb_);
+  if (ccb_)
+  {
+    // make sure CCB is in FPGA mode
+    SetFPGAMode(ccb_);
 
-  // issue L1Reset to reset the counters
-  ccb_->WriteRegister(CCB_VME_L1RESET, 1);
+    // issue L1Reset to reset the counters
+    ccb_->WriteRegister(CCB_VME_L1RESET, 1);
+  }
+  else
+  {
+    out() << __PRETTY_FUNCTION__ << "No CCB defined!" << endl;
+  }
 }
 
 

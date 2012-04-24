@@ -79,11 +79,12 @@ bool CompareValues(std::ostream &out,
 
 void MessageOK(std::ostream &out,
                const std::string &test,
-               bool testbool)
+               int errcode)
 {
   out << test;
-  if (testbool) out << " -> PASS" << endl;
-  else          out << " -> FAIL <-" << endl;
+  if (errcode == 0)     out << " -> PASS" << endl;
+  else if (errcode < 0) out << " -> INACTIVE" << endl;
+  else                  out << " -> FAIL" << endl;
   return;
 }
 

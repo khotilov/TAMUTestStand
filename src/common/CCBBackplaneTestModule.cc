@@ -169,15 +169,15 @@ void CCBBackplaneTestModule::TestButton(int tmb, const string &label, const stri
   *out << cgicc::td().set("ALIGN","center");
   *out << cgicc::form().set("method","GET").set("action", "/" + app_->getApplicationDescriptor()->getURN() + "/CCBBackplaneRunTest" ) << endl;
 
-  if ( testResult == -1 )
+  if ( testResult == -1 ) // wasn't run yet
   {
     *out << cgicc::input().set("type", "submit").set("value", label).set("style", "color:blue" ) << endl;
   }
-  else if ( testResult > 0 )
+  else if ( testResult == 0 ) // ok
   {
     *out << cgicc::input().set("type", "submit").set("value", label).set("style", "color:green") << endl;
   }
-  else
+  else // some non-zero error code
   {
     *out << cgicc::input().set("type", "submit").set("value", label).set("style", "color:red"  ) << endl;
   }

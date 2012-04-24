@@ -54,7 +54,8 @@ public:
 
   /// Run a test with specific label.
   /// A special case of a label is "All", which would cause running of all registered tests.
-  bool RunTest(const std::string &test);
+  /// \return 0 if success, numerical error code > 0 if problem
+  int RunTest(const std::string &test);
 
   /// Allows to set the results output destination.
   /// Initially, the internal out_ output is set to std::cout in the constructor.
@@ -66,7 +67,7 @@ public:
 protected:
 
   /// defines the signature for test procedures
-  typedef boost::function<bool ()> TestProcedure;
+  typedef boost::function<int ()> TestProcedure;
 
   /// Register a new test procedure with a given label
   /// @param test is a test's label (note: it cannot be "All" which is reserved for running all tests)

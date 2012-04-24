@@ -80,9 +80,9 @@ void CCBBackplaneTester::RegisterTestProcedures()
 // Actual tests:
 ////////////////////////////////////////////////////
 
-bool CCBBackplaneTester::TestL1Reset()
+int CCBBackplaneTester::TestL1Reset()
 {
-  bool result = true;
+  bool ok = true;
   
   int Niter = 100;
   
@@ -99,8 +99,8 @@ bool CCBBackplaneTester::TestL1Reset()
     int counter_read = ResultRegisterData( LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTER) );
 
     // compare data bus from result register to test value written to DataBus
-    result &= CompareValues(out(), "L1Reset counter flags", counter_flags_read, 0, true);
-    result &= CompareValues(out(), "L1Reset counter", counter_read, 0, true);
+    ok &= CompareValues(out(), "L1Reset counter flags", counter_flags_read, 0, true);
+    ok &= CompareValues(out(), "L1Reset counter", counter_read, 0, true);
     
     // read back DataBus from result register
     uint32_t rr_read = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_DATA_BUS);
@@ -118,21 +118,21 @@ bool CCBBackplaneTester::TestL1Reset()
         << " Counter: " << dec << counter_read <<endl;
     
     // compare data bus from result register to test value written to DataBus
-    result &= CompareValues(out(), "L1Reset DataBus", data_bus_read & 0xFF, 0, true);
-    result &= CompareValues(out(), "L1Reset Command Code", command_code, CCB_COM_RR_LOAD_DATA_BUS, true);
+    ok &= CompareValues(out(), "L1Reset DataBus", data_bus_read & 0xFF, 0, true);
+    ok &= CompareValues(out(), "L1Reset Command Code", command_code, CCB_COM_RR_LOAD_DATA_BUS, true);
     
     usleep(50);
   }
   
-  cout<< __func__ <<" result "<< result <<endl;
-  
-  return result;
+  int errcode = (ok == false);
+  MessageOK(cout, __func__, errcode);
+  return errcode;
 }
 
 
-bool CCBBackplaneTester::TestTMBHardReset()
+int CCBBackplaneTester::TestTMBHardReset()
 {
-  bool result = true;
+  bool ok = true;
   
   int Niter = 5;
   
@@ -150,37 +150,36 @@ bool CCBBackplaneTester::TestTMBHardReset()
     int counter_read = ResultRegisterData( LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTER) );
 
     // compare data bus from result register to test value written to DataBus
-    result &= CompareValues(out(), "TMBHardReset counter flags", counter_flags_read, 0, true);
-    result &= CompareValues(out(), "TMBHardReset counter", counter_read, 0, true);
+    ok &= CompareValues(out(), "TMBHardReset counter flags", counter_flags_read, 0, true);
+    ok &= CompareValues(out(), "TMBHardReset counter", counter_read, 0, true);
     
     // read back DataBus from result register
     uint32_t rr_read = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_DATA_BUS);
     int command_code = ResultRegisterCommand(rr_read);
     uint32_t data_bus_read = ResultRegisterData(rr_read);
     
+    // compare data bus from result register to test value written to DataBus
+    ok &= CompareValues(out(), "TMBHardReset DataBus", data_bus_read & 0xFF, 0, true);
+    ok &= CompareValues(out(), "TMBHardReset Command Code", command_code, CCB_COM_RR_LOAD_DATA_BUS, true);
+
     bool check = ((data_bus_read == 0) && 
                   (command_code == CCB_COM_RR_LOAD_DATA_BUS) &&
                   (counter_flags_read == 0) &&
                   (counter_read == 0) );
     
-    cout<< __func__ <<" write/read "
-      << ( check ? "OK ": "BAD ") << " = " << hex << 0 << " / " << data_bus_read <<" Command code: "<<
-    command_code << " Counter flags: " << counter_flags_read << " Counter: " <<dec << counter_read <<endl;
-    
-    // compare data bus from result register to test value written to DataBus
-    result &= CompareValues(out(), "TMBHardReset DataBus", data_bus_read & 0xFF, 0, true);
-    result &= CompareValues(out(), "TMBHardReset Command Code", command_code, CCB_COM_RR_LOAD_DATA_BUS, true);
-
+    cout<< __func__ << " write/read " << (check ? "OK " : "BAD ") << " = " << hex << 0 << " / " << data_bus_read
+        << " Command code: " << command_code << " Counter flags: " << counter_flags_read << " Counter: " << dec
+        << counter_read << endl;
   }
   
-  cout<< __func__ <<" result "<< result <<endl;
-  
-  return result;
+  int errcode = (ok == false);
+  MessageOK(cout, __func__, errcode);
+  return errcode;
 }
 
-bool CCBBackplaneTester::TestPulseCounters()
+int CCBBackplaneTester::TestPulseCounters()
 {
-  bool result = true;
+  bool ok = true;
 
   int Niter = 100;
 
@@ -198,7 +197,7 @@ bool CCBBackplaneTester::TestPulseCounters()
     counter_flags_read = ResultRegisterData(counter_flags_read);
 
     // make sure counter flags are off!!!
-    result &= CompareValues(out(), "PulseCounters", counter_flags_read, 0, true);
+    ok &= CompareValues(out(), "PulseCounters", counter_flags_read, 0, true);
 
     // for finite pulse commands
     if (isFinitePulseCommand(command))
@@ -221,10 +220,10 @@ bool CCBBackplaneTester::TestPulseCounters()
     counter_flags_read = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTERS_FLAG);
     counter_flags_read = ResultRegisterData(counter_flags_read);
 
-    cout<< __func__ <<" flags write/read "<<(counter_flags_read==counter_flag? "OK ": "BAD ")  << counter_flag<<" "<< counter_flags_read<<endl;
+    cout<< __func__ << " flags write/read " << (counter_flags_read == counter_flag ? "OK " : "BAD ") << counter_flag << " " << counter_flags_read << endl;
 
     // fail the test if not equal
-    result &= CompareValues(out(), "PulseCounters", counter_flags_read, counter_flag, true, false);
+    ok &= CompareValues(out(), "PulseCounters", counter_flags_read, counter_flag, true, false);
 
 
     // read the total pulse counter out of the TMB RR:
@@ -233,33 +232,32 @@ bool CCBBackplaneTester::TestPulseCounters()
     // compare to the expected numbers
     if (is25nsPulseCommand(command))
     {
-      result &= CompareValues(out(), "PulseCounters", counter_read, Niter, true, false);
+      ok &= CompareValues(out(), "PulseCounters", counter_read, Niter, true, false);
     }
     else if (is500nsPulseCommand(command))
     {
-      result &= CompareValues(out(), "PulseCounters", (float)counter_read/Niter, 22., .1, false);
+      ok &= CompareValues(out(), "PulseCounters", (float)counter_read/Niter, 22., .1, false);
     }
     else if (command == CCB_VME_ALCT_ADB_PULSE_ASYNC)
     {
-      result &= CompareValues(out(), "PulseCounters", (float)counter_read/Niter, 15., .1, false);
+      ok &= CompareValues(out(), "PulseCounters", (float)counter_read/Niter, 15., .1, false);
     }
 
-    cout<< __func__ <<" counter read "<< counter_read<<"  average = "<<(float)counter_read/Niter<<endl<<endl;
-
+    cout << __func__ << " counter read " << counter_read << "  average = " << (float)counter_read / Niter << endl << endl;
 
     // issue L1Reset to reset the counters
     ccb_->WriteRegister(CCB_VME_L1RESET, 1);
   }
 
-  cout<< __func__ <<" result " << result <<endl;
-
-  return result;
+  int errcode = (ok == false);
+  MessageOK(cout, __func__, errcode);
+  return errcode;
 }
 
 
-bool CCBBackplaneTester::TestCommandBus()
+int CCBBackplaneTester::TestCommandBus()
 {
-  bool result = true;
+  bool ok = true;
 
   int Niter = 100;
 
@@ -276,25 +274,25 @@ bool CCBBackplaneTester::TestCommandBus()
       // load result register with the command code, read it back, and extract the command field
       uint32_t command_code = ResultRegisterCommand( LoadAndReadResutRegister(ccb_, tmb_->slot(), reg[j]) );
 
-      cout<< __func__ <<" write/read "<< (command_code == reg[j]? "OK ": "BAD ") << " = " << reg[j] << " / " << command_code <<endl;
+      cout << __func__ << " write/read " << (command_code == reg[j] ? "OK " : "BAD ") << " = " << reg[j] << " / " << command_code << endl;
 
       // compare the read out command code to the value written into the CSRB2 register
-      result &= CompareValues(out(), "CommandBus", command_code, reg[j], true);
+      ok &= CompareValues(out(), "CommandBus", command_code, reg[j], true);
     }
 
     // issue L1Reset to reset the counters
     ccb_->WriteRegister(CCB_VME_L1RESET, 1);
   }
 
-  cout<< __func__ <<" result "<< result <<endl;
-
-  return result;
+  int errcode = (ok == false);
+  MessageOK(cout, __func__, errcode);
+  return errcode;
 }
 
 
-bool CCBBackplaneTester::TestCCBReserved()
+int CCBBackplaneTester::TestCCBReserved()
 {
-  bool result = true;
+  bool ok = true;
 
   RR0Bits rr0;
 
@@ -343,8 +341,8 @@ bool CCBBackplaneTester::TestCCBReserved()
     rr0.r = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR0);
 
     // compare the read out bit to the written value
-    result &= CompareValues(out(), "CCBReserved2", rr0.CCB_reserved2, csrb6.CCB_reserved2, true);
-    result &= CompareValues(out(), "CCBReserved3", rr0.CCB_reserved3, csrb6.CCB_reserved3, true);
+    ok &= CompareValues(out(), "CCBReserved2", rr0.CCB_reserved2, csrb6.CCB_reserved2, true);
+    ok &= CompareValues(out(), "CCBReserved3", rr0.CCB_reserved3, csrb6.CCB_reserved3, true);
 
     cout << " CCB_reserved2 & 3: written " << csrb6.CCB_reserved2 << " " << csrb6.CCB_reserved3
         << "  read " << rr0.CCB_reserved2 << " " << rr0.CCB_reserved3 <<endl;
@@ -357,15 +355,15 @@ bool CCBBackplaneTester::TestCCBReserved()
   // TODO: loopback board related tests for CCB_reserved2 & CCB_reserved3
 
 
-  cout<< __func__ <<" result "<< result <<endl;
-
-  return result;
+  int errcode = (ok == false);
+  MessageOK(cout, __func__, errcode);
+  return errcode;
 }
 
 
-bool CCBBackplaneTester::TestTMBReservedOut()
+int CCBBackplaneTester::TestTMBReservedOut()
 {
-  bool result = true;
+  bool ok = true;
 
   int Niter = 20;
 
@@ -394,22 +392,22 @@ bool CCBBackplaneTester::TestTMBReservedOut()
           << " = " << pattern  << " / " << rr.TMB_reserved_out << endl;
 
       // compare the the result from written value
-      result &= CompareValues(out(), "TMBReservedOut", rr.TMB_reserved_out, pattern, true);
+      ok &= CompareValues(out(), "TMBReservedOut", rr.TMB_reserved_out, pattern, true);
 
       // issue L1Reset after each iteration
       ccb_->WriteRegister(CCB_VME_L1RESET, 1);
     }
   }
 
-  cout<< __func__ <<" result "<< result <<endl;
-
-  return result;
+  int errcode = (ok == false);
+  MessageOK(cout, __func__, errcode);
+  return errcode;
 }
 
 
-bool CCBBackplaneTester::TestDMBReservedOut()
+int CCBBackplaneTester::TestDMBReservedOut()
 {
-  bool result = true;
+  bool ok = true;
 
   int Niter = 100;
 
@@ -438,22 +436,22 @@ bool CCBBackplaneTester::TestDMBReservedOut()
           << " = " << pattern << " / " << csrb11.TMB_reserved_in <<endl;
 
       // compare the the result from written value
-      result &= CompareValues(out(), "DMBReservedOut", csrb11.TMB_reserved_in, pattern, true);
+      ok &= CompareValues(out(), "DMBReservedOut", csrb11.TMB_reserved_in, pattern, true);
 
       // issue L1Reset after each iteration
       ccb_->WriteRegister(CCB_VME_L1RESET, 1);
     }
   }
 
-  cout<< __func__ <<" result "<< result <<endl;
-
-  return result;
+  int errcode = (ok == false);
+  MessageOK(cout, __func__, errcode);
+  return errcode;
 }
 
 
-bool CCBBackplaneTester::TestDataBus()
+int CCBBackplaneTester::TestDataBus()
 {
-  bool result = true;
+  bool ok = true;
   
   int Niter = 20;
   
@@ -475,22 +473,22 @@ bool CCBBackplaneTester::TestDataBus()
           << " = " << hex << reg[j] << " / " << data_bus_read << dec <<endl;
       
       // compare data bus from result register to test value written to DataBus
-      result &= CompareValues(out(), "DataBus", data_bus_read & 0xFF, reg[j], true);
+      ok &= CompareValues(out(), "DataBus", data_bus_read & 0xFF, reg[j], true);
 
       // check that the four clock_status bits are zero
-      result &= CompareValues(out(), "DataBus clock_status", (data_bus_read >> 8) & 0x0F, 0, true);
+      ok &= CompareValues(out(), "DataBus clock_status", (data_bus_read >> 8) & 0x0F, 0, true);
     }
   }
   
-  cout << __func__ << " result " << result << endl;
-  
-  return result;
+  int errcode = (ok == false);
+  MessageOK(cout, __func__, errcode);
+  return errcode;
 }
 
 
-bool CCBBackplaneTester::TestCCBClock40()
+int CCBBackplaneTester::TestCCBClock40()
 {
-  bool result = true;
+  bool ok = true;
 
   int Niter = 250;
 
@@ -514,12 +512,14 @@ bool CCBBackplaneTester::TestCCBClock40()
     prev_clock_val = clock_val;
   }
   
-  result = CompareValues(out(), "CCBClock40", (float)(Niter - repeat_count), (float)Niter, tolerance, false);
+  ok = CompareValues(out(), "CCBClock40", (float)(Niter - repeat_count), (float)Niter, tolerance, false);
   
-  cout<< __func__ << " iterations/ unique values " << (result ? "OK " : "BAD ")
+  cout<< __func__ << " iterations/ unique values " << (ok ? "OK " : "BAD ")
       << " = " << dec << Niter << " / " << (Niter - repeat_count) << endl;
   
-  return result;
+  int errcode = (ok == false);
+  MessageOK(cout, __func__, errcode);
+  return errcode;
 
   /*
   int Niter = 1000;
