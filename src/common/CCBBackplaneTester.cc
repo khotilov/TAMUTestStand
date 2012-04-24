@@ -88,11 +88,11 @@ int CCBBackplaneTester::TestL1Reset()
   
   for(int i=0; i<Niter; ++i)
   {
-    // write DataBus with test value
+    // write DataBus with some test value
     ccb_->WriteRegister(CCB_CSRB3_DATA_BUS, 0xFF);
     
     // do the L1 reset
-    ccb_->WriteRegister(CCB_VME_L1RESET, 1);
+    L1Reset();
     
     // read the counter & the counter flags to check that they are 0 after the L1Reset
     int counter_flags_read = ResultRegisterData( LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTERS_FLAG) );
@@ -138,11 +138,13 @@ int CCBBackplaneTester::TestTMBHardReset()
   
   for(int i=0; i<Niter; ++i)
   {
-    // write DataBus with test value
+    // write DataBus with some test value
     ccb_->WriteRegister(CCB_CSRB3_DATA_BUS, 0xFF);
     
+    // do TMB hard reset
     ccb_->WriteRegister(CCB_VME_TMB_HARD_RESET, 1);
     
+    // wait several sec
     sleep(3);
     
     // read counter & counter flags to check that they are 0
@@ -168,8 +170,7 @@ int CCBBackplaneTester::TestTMBHardReset()
                   (counter_read == 0) );
     
     cout<< __func__ << " write/read " << (check ? "OK " : "BAD ") << " = " << hex << 0 << " / " << data_bus_read
-        << " Command code: " << command_code << " Counter flags: " << counter_flags_read << " Counter: " << dec
-        << counter_read << endl;
+        << " Command code: " << command_code << " Counter flags: " << counter_flags_read << " Counter: " << dec << counter_read << endl;
   }
   
   int errcode = (ok == false);
@@ -246,7 +247,7 @@ int CCBBackplaneTester::TestPulseCounters()
     cout << __func__ << " counter read " << counter_read << "  average = " << (float)counter_read / Niter << endl << endl;
 
     // issue L1Reset to reset the counters
-    ccb_->WriteRegister(CCB_VME_L1RESET, 1);
+    L1Reset();
   }
 
   int errcode = (ok == false);
@@ -281,7 +282,7 @@ int CCBBackplaneTester::TestCommandBus()
     }
 
     // issue L1Reset to reset the counters
-    ccb_->WriteRegister(CCB_VME_L1RESET, 1);
+    L1Reset();
   }
 
   int errcode = (ok == false);
@@ -300,14 +301,14 @@ int CCBBackplaneTester::TestCCBReserved()
   rr0.r = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR0);
   cout << " CCB_reserved0: read bit value " << rr0.CCB_reserved0 <<endl;
   // reset the counters
-  ccb_->WriteRegister(CCB_VME_L1RESET, 1);
+  L1Reset();
 
 
   //  CCB_reserved1 - trivial read-only test
   rr0.r = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR0);
   cout << " CCB_reserved1: read bit value " << rr0.CCB_reserved1 <<endl;
   // reset the counters
-  ccb_->WriteRegister(CCB_VME_L1RESET, 1);
+  L1Reset();
 
 
   // ----- CCB_reserved2 & CCB_reserved3
@@ -348,7 +349,7 @@ int CCBBackplaneTester::TestCCBReserved()
         << "  read " << rr0.CCB_reserved2 << " " << rr0.CCB_reserved3 <<endl;
 
     // issue L1Reset to reset the counters
-    ccb_->WriteRegister(CCB_VME_L1RESET, 1);
+    L1Reset();
   }
 
 
@@ -395,7 +396,7 @@ int CCBBackplaneTester::TestTMBReservedOut()
       ok &= CompareValues(out(), "TMBReservedOut", rr.TMB_reserved_out, pattern, true);
 
       // issue L1Reset after each iteration
-      ccb_->WriteRegister(CCB_VME_L1RESET, 1);
+      L1Reset();
     }
   }
 
@@ -439,7 +440,7 @@ int CCBBackplaneTester::TestDMBReservedOut()
       ok &= CompareValues(out(), "DMBReservedOut", csrb11.TMB_reserved_in, pattern, true);
 
       // issue L1Reset after each iteration
-      ccb_->WriteRegister(CCB_VME_L1RESET, 1);
+      L1Reset();
     }
   }
 
@@ -520,30 +521,6 @@ int CCBBackplaneTester::TestCCBClock40()
   int errcode = (ok == false);
   MessageOK(cout, __func__, errcode);
   return errcode;
-
-  /*
-  int Niter = 1000;
-  double tolerance = .2;
-  
-  set<uint32_t> clock_values;
-  
-  size_t prev_size = clock_values.size();
-  for(int i=0; i<Niter; ++i)
-  {
-    // load ccb_clock40_enable or ccb_rx0 value into RR
-    uint32_t clock_val = ResultRegisterData( LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_CCB_RX0) );
-    cout<<" clock_val "<<dec<<clock_val<<endl;
-    
-    clock_values.insert(clock_val);
-    if (clock_values.size() == prev_size) cout<<dec<<i<<" non-uniq"<<endl;
-    prev_size = clock_values.size();
-  }
-  
-  bool result = CompareValues(out(), "CCBClock40", (float)clock_values.size(), (float)Niter, tolerance, true);
-  
-  cout<< __func__ <<" iterations/ unique values "<< (result? "OK ": "BAD ") << " = " << dec << Niter << " / " << clock_values.size() <<endl;
-  return result;
-  */
 }
 
 

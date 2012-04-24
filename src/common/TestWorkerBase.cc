@@ -146,13 +146,26 @@ int TestWorkerBase::RunTest(const std::string &test)
 }
 
 
-void TestWorkerBase::Reset()
+void TestWorkerBase::HardReset()
 {
   out() << "TestWorkerBase: Hard reset through CCB" << endl;
   if ( ccb_ )
   {
     ccb_->hardReset();
     usleep(5000);
+  }
+  else
+  {
+    out() << __PRETTY_FUNCTION__ << "No CCB defined!" << endl;
+  }
+}
+
+
+void TestWorkerBase::L1Reset()
+{
+  if ( ccb_ )
+  {
+    ccb_->WriteRegister(CCB_VME_L1RESET, 1);
   }
   else
   {
@@ -169,7 +182,7 @@ void TestWorkerBase::PrepareHWForTest()
     SetFPGAMode(ccb_);
 
     // issue L1Reset to reset the counters
-    ccb_->WriteRegister(CCB_VME_L1RESET, 1);
+    L1Reset();
   }
   else
   {

@@ -82,8 +82,11 @@ protected:
   /// Hardware preparation procedure that has to be performed before every test.
   virtual void PrepareHWForTest();
 
-  /// issue HardReset
-  virtual void Reset();
+  /// issue HardReset through CCB
+  virtual void HardReset();
+
+  /// issue L1Reset through CCB
+  virtual void L1Reset();
 
   // hold CCB and TMB pointers
   CCB * ccb_;
