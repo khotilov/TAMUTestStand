@@ -62,9 +62,37 @@ void TestWorkerBase::RegisterTheTest(const std::string &test, TestProcedure proc
 }
 
 
-std::vector<std::string> TestWorkerBase::GetTestLabels()
+std::vector<std::string> TestWorkerBase::GetTestLabels() const
 {
   return testLabels_;
+}
+
+
+int TestWorkerBase::NTests() const
+{
+  return testResults_.size();
+}
+
+
+int TestWorkerBase::NTestsPass() const
+{
+  int n = 0;
+  for (std::map<string, int>::const_iterator it = testResults_.begin(); it != testResults_.end(); ++it)
+  {
+    if (it->second == 0) ++n;
+  }
+  return n;
+}
+
+
+int TestWorkerBase::NTestsFail() const
+{
+  int n = 0;
+  for (std::map<string, int>::const_iterator it = testResults_.begin(); it != testResults_.end(); ++it)
+  {
+    if (it->second > 0) ++n;
+  }
+  return n;
 }
 
 
@@ -102,7 +130,7 @@ int TestWorkerBase::RunTest(const std::string &test)
     //HardReset(); // WARNING: doing hard reset makes the 1st CommandBus test fail... why???
 
     // run All test in the order they were registered:
-    for (std::vector<std::string>::iterator itest = testLabels_.begin(); itest != testLabels_.end(); ++itest)
+    for (std::vector<string>::iterator itest = testLabels_.begin(); itest != testLabels_.end(); ++itest)
     {
       //if (*itest == "Dummy") continue;
 

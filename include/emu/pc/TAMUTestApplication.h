@@ -29,7 +29,7 @@ public:
   /// home-page of the application
   void Default(xgi::Input * in, xgi::Output * out ) throw (xgi::exception::Exception);
 
-  /// a webpage to select/upload different config file
+  /// webpage to select/upload different config file
   void ChooseConfigXMLPage(xgi::Input * in, xgi::Output * out );
 
   /// webpage that displays contents of the current crate

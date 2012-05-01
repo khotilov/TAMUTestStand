@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # it is expected to be launched from the TAMUTestStand/ location
 if [ `basename $PWD` != "TAMUTestStand" ];

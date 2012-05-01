@@ -55,17 +55,14 @@ void CCBBackplaneTestModule::Init()
     cout<<__PRETTY_FUNCTION__<<": current crate is not set"<<endl;
     return;
   }
-  std::vector< TMB * > tmbs = sys_->crate()->tmbs();
-  CCB * ccb = sys_->crate()->ccb();
-  tests_.clear();
 
-  for (size_t i = 0; i < tmbs.size(); i++)
-  {
-    CCBBackplaneTester tmp;
-    tmp.SetTMB(tmbs[i]);
-    tmp.SetCCB(ccb);
-    tests_.push_back(tmp);
-  }
+  tm_.Init(sys_);
+}
+
+
+std::ostringstream& CCBBackplaneTestModule::getTestOutput(int tmb)
+{
+  return tm_.GetTestOutput(tmb);
 }
 
 
@@ -82,11 +79,20 @@ void CCBBackplaneTestModule::CCBBackplaneTestsPage(xgi::Input * in, xgi::Output 
   Chamber * thisChamber = sys_->chamber();
   Crate * thisCrate = sys_->crate();
 
-  if (thisTMB == 0 || thisChamber == 0 || thisCrate == 0)
+  if (thisCrate == 0)
   {
-    cout<<__PRETTY_FUNCTION__<<": Current TMB is not set!!!" << endl;
-    app_->Default(in, out);
+    *out << __PRETTY_FUNCTION__ << ": Current crate is not set!!!" << endl;
   }
+  if (thisChamber == 0)
+  {
+    *out << __PRETTY_FUNCTION__ << ": Current chamber is not set!!!" << endl;
+  }
+  if (thisTMB == 0)
+  {
+    *out << __PRETTY_FUNCTION__ << ": CurrenTestt TMB is not set!!!" << endl;
+  }
+  if (thisTMB == 0 || thisChamber == 0 || thisCrate == 0)  return;
+
 
   string urn = app_->getApplicationDescriptor()->getURN();
 
@@ -103,7 +109,7 @@ void CCBBackplaneTestModule::CCBBackplaneTestsPage(xgi::Input * in, xgi::Output 
   // Run all tests button:
 
   *out << form().set("method","GET").set("action", "/" + urn + "/CCBBackplaneRunTest" ) << endl;
-  *out << input().set("type","submit").set("value", "Run All TMB tests").set("style", "color:blue") << endl;
+  *out << input().set("type","submit").set("Testvalue", "Run All TMB tests").set("style", "color:blue") << endl;
   *out << input().set("type","hidden").set("value", tmbStr).set("name", "tmb");
   *out << input().set("type","hidden").set("value", "All").set("name", "test_label");
   *out << form() << endl;
@@ -134,6 +140,13 @@ void CCBBackplaneTestModule::CCBBackplaneTestsPage(xgi::Input * in, xgi::Output 
   TestButton(tmb, "Dummy", "Dummy", out);
 
   *out << tr();
+  /////////////////////////////////////////////////////////
+
+    *out << tr().set("ALIGN","center");
+
+    TestButton(tmb, "DMB_reserved_in (L/B)", "DMBReservedInLoopback", out);
+
+    *out << tr();
 
   *out << cgicc::table();
 
@@ -141,12 +154,12 @@ void CCBBackplaneTestModule::CCBBackplaneTestsPage(xgi::Input * in, xgi::Output 
   // Textarea with results
 
   *out << cgicc::textarea().set("name","TestOutput").set("WRAP","OFF").set("rows","20").set("cols","100");
-  if (testOutputs_[tmb].str().empty())
+  if (tm_.GetTestOutput(tmb).str().empty())
   {
-    testOutputs_[tmb] << "TMB-CCB Backplane Tests "
+    tm_.GetTestOutput(tmb) << "TMB-CCB Backplane Tests "
         << sys_->crate()->GetChamber(sys_->tmbs()[tmb]->slot())->GetLabel().c_str() << " output:" << endl;
   }
-  *out << testOutputs_[tmb].str() << endl;
+  *out << tm_.GetTestOutput(tmb).str() << endl;
   *out << cgicc::textarea();
 
   *out << form().set("method", "GET").set("action", "/" + urn + "/CCBBackplaneLogTestsOutput" ) << endl;
@@ -161,10 +174,9 @@ void CCBBackplaneTestModule::CCBBackplaneTestsPage(xgi::Input * in, xgi::Output 
 }
 
 
-
 void CCBBackplaneTestModule::TestButton(int tmb, const string &label, const string &test_label, xgi::Output * out)
 {
-  int testResult = tests_[tmb].GetTestResult(test_label);
+  int testResult = tm_.GetTester("CCBBackplaneTester", tmb)->GetTestResult(test_label);
 
   *out << cgicc::td().set("ALIGN","center");
   *out << cgicc::form().set("method","GET").set("action", "/" + app_->getApplicationDescriptor()->getURN() + "/CCBBackplaneRunTest" ) << endl;
@@ -213,18 +225,14 @@ void CCBBackplaneTestModule::CCBBackplaneRunTest(xgi::Input * in, xgi::Output * 
 
   cout << __func__ << ":  test " << test_label<< "  for TMB #" << tmbN_  << endl;
 
-  tests_[tmbN_].RedirectOutput(&testOutputs_[tmbN_]);
-
   try
   {
-    tests_[tmbN_].RunTest(test_label);
+    tm_.GetTester("CCBBackplaneTester", tmbN_)->RunTest(test_label);
   }
   catch (emu::exception::Exception &e)
   {
     *out << e.toHTML();
   }
-
-  tests_[tmbN_].RedirectOutput(&cout);
 
   this->CCBBackplaneTestsPage(in,out);
 }
@@ -250,7 +258,7 @@ void CCBBackplaneTestModule::CCBBackplaneLogTestsOutput(xgi::Input * in, xgi::Ou
   if (name2 != cgi.getElements().end())
   {
     cout << __func__ << "ClearTestsOutput" << endl;
-    testOutputs_[tmbN_].str("");
+    tm_.GetTestOutput(tmbN_).str("");
 
     CCBBackplaneTestsPage(in, out);
     return;
@@ -258,7 +266,7 @@ void CCBBackplaneTestModule::CCBBackplaneLogTestsOutput(xgi::Input * in, xgi::Ou
 
   string tmb_slot = toolbox::toString("%d", sys_->tmbs()[tmbN_]->slot());
   string file_name = "CCBBackplaneTests_TMBslot" + tmb_slot + "_" + emu::utils::getDateTime(true) + ".log";
-  emu::utils::saveAsFileDialog(out, testOutputs_[tmbN_].str(), file_name);
+  emu::utils::saveAsFileDialog(out, tm_.GetTestOutput(tmbN_).str(), file_name);
 }
 
 

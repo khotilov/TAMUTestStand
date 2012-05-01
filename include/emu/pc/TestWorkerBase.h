@@ -16,8 +16,9 @@ class CCB;
 /** class TestWorkerBase
  *
  * A base class that contains generic TMB testing functionality like
- *  - registering a test procedur
+ *  - registering a test procedure
  *  - running the test(s)
+ *  - accessing test results
  *  - keeping log of test output
  *  - resets
  * which should be reused by its subclasses.
@@ -33,16 +34,25 @@ class TestWorkerBase
 {
 public:
 
-  // not responsible for deleting pointers
   TestWorkerBase();
 
   virtual ~TestWorkerBase();
 
+  // not responsible for deleting pointers
   void SetTMB(TMB * tmb) {tmb_ = tmb;}
   void SetCCB(CCB * ccb) {ccb_ = ccb;}
 
   /// returns labels of available registered tests
-  std::vector<std::string> GetTestLabels();
+  std::vector<std::string> GetTestLabels() const;
+
+  /// total number of tests
+  int NTests() const;
+
+  /// number of passed tests
+  int NTestsPass() const;
+
+  /// number of failed tests
+  int NTestsFail() const;
 
   /// Getter for the result of a test with specific label.
   /// Note: the results values are first initialized to -1 in the constructor.
@@ -91,7 +101,8 @@ protected:
   /// issue L1Reset through CCB
   virtual void L1Reset();
 
-  // hold CCB and TMB pointers
+  // Holders for CCB and TMB pointers.
+  // This class is not responsible for deleting the pointers ("aggregation")
   CCB * ccb_;
   TMB * tmb_;
 

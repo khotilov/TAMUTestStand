@@ -4,6 +4,7 @@
 
 #include "toolbox/lang/Class.h"
 #include "emu/pc/CCBBackplaneTester.h"
+#include "emu/pc/TMBTestManager.h"
 
 #include <vector>
 #include <sstream>
@@ -30,6 +31,8 @@ class CCBBackplaneTestModule : public virtual toolbox::lang::Class
 {
 public:
 
+  /// constructor
+  /// the pointers to application and ConfigurablePCrates data are managed externally
   CCBBackplaneTestModule(xdaq::WebApplication * app, ConfigurablePCrates * sys);
 
   /// The html interface page (XGI bound method)
@@ -46,27 +49,24 @@ public:
   void Init();
 
   /// access the output of tests for a particular tmb
-  std::ostringstream & getTestOutput(int tmb) { return testOutputs_[tmb]; }
+  std::ostringstream & getTestOutput(int tmb);
 
 private:
 
   /// shortcut for the code to create a run-test button
   void TestButton(int tmb, const std::string &label, const std::string &test_label, xgi::Output * out);
 
-  /// keep link to the application which uses this utility
+  /// keep link to the application which uses this utility (not owned by this class!)
   xdaq::WebApplication * app_;
 
-  /// the system under testing
+  /// the system under testing (not owned by this class!)
   ConfigurablePCrates * sys_;
 
   /// remember last tmb index
   int tmbN_;
 
-  /// tests runner classes for tmbs in a particular crate initialized with InitTMBTests
-  std::vector<CCBBackplaneTester> tests_;
-
-  /// keeps tests' output for [tmb]
-  std::ostringstream testOutputs_[10];
+  /// manager of groups of tests
+  TMBTestManager tm_;
 };
 
 

@@ -22,8 +22,10 @@ Sources=\
 	CCBCommands.cc \
 	TestWorkerBase.cc \
 	CCBBackplaneTester.cc \
+	TMBExternalTester.cc \
 	ResultRegisterSerializer.cc \
 	ConfigurablePCrates.cc \
+	TMBTestManager.cc \
 	CCBBackplaneUtilsModule.cc \
 	CCBBackplaneTestModule.cc \
 	TMBTestModule.cc \

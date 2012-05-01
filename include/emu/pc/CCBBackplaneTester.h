@@ -48,12 +48,12 @@ private:
    * Also check that the total counter and the counter flag bits are cleared by L1Reset.
    */
   int TestL1Reset();
-  
+
   /**
    * Write to DataBus and check that it is cleared after HardReset signal is sent.
    */
   int TestTMBHardReset();
- 
+
   /**
    * Send various pulse triggering commands through VMS interface and check that
    * for each command only this command's fit blag is set in the pulse counter flags register.
@@ -74,22 +74,22 @@ private:
    * CCB_reserved3 - write through CSRB6, read through RR0
    */
   int TestCCBReserved();
-  
+
   /**
    * Test TMB_reserved_out[0:2] connections (CSRB6[9:7]) by reading them back from RR bits [15:13]
    */
   int TestTMBReservedOut();
-  
+
   /**
    * Test DMB_reserved_out[0:4] connections (CSRB6[14:10]) by reading them back from CSRB11 bits [7:3]
    */
   int TestDMBReservedOut();
-  
+
   /**
    * Write various values into CSRB3 (CCB data bus),
    * read back through TMB's result register, and compare.
    *
-   * Also, the TMB command that reads the data bus value (bits [7:0] out of 12 data bits), 
+   * Also, the TMB command that reads the data bus value (bits [7:0] out of 12 data bits),
    * sets one of 4 more bits (bits [11:8]) if status of some clocks is not good.
    * Test checks if these clock statuses are zero.
    */
@@ -100,6 +100,13 @@ private:
    * Check that we see sufficient variety in the values.
    */
   int TestCCBClock40();
+
+  /**
+  * Test DMB_reserved_in [2:0] via loopback board,
+  * bits [1:0] are tested by writing into bits [4:3] of DMB_reserved_out,
+  * bit 2 is tested by writing into CCB_reserved2
+  */
+  int TestDMBReservedInLoopback();
 };
 
 
