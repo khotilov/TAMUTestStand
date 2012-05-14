@@ -107,7 +107,7 @@ union CSRB6Bits
     unsigned int DMB_reserved0 : 1; // #5
     unsigned int DMB_reserved1 : 1; //
     unsigned int TMB_reserved_out : 3; // #9:7
-    unsigned int DMB_reserved_out : 5; // #15:10
+    unsigned int DMB_reserved_out : 5; // #14:10
   };
 };
 

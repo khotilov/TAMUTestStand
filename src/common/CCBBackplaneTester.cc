@@ -73,6 +73,7 @@ void CCBBackplaneTester::RegisterTestProcedures()
   RegisterTheTest("DataBus", boost::bind( &CCBBackplaneTester::TestDataBus, this));
   RegisterTheTest("CCBClock40", boost::bind( &CCBBackplaneTester::TestCCBClock40, this));
   RegisterTheTest("DMBReservedInLoopback", boost::bind( &CCBBackplaneTester::TestDMBReservedInLoopback, this));
+  RegisterTheTest("DMBL1AReleaseLoopback", boost::bind( &CCBBackplaneTester::TestDMBL1AReleaseLoopback, this));
   RegisterTheTest("Dummy", boost::bind( &CCBBackplaneTester::TestDummy, this));
 }
 
@@ -533,45 +534,95 @@ int CCBBackplaneTester::TestDMBReservedInLoopback()
 
   // read the current value of CSRB6
   CSRB6Bits csrb6;
-  csrb6.r = ccb_->ReadRegister(CCB_CSRB6);
+  //csrb6.r = ccb_->ReadRegister(CCB_CSRB6);
+  csrb6.r = 0;
 
   // walk over the range of values of possible combinations of 3 bits
   for (uint32_t pattern = 0; pattern < 8; ++pattern)
   {
-    cout << endl << test + " testing pattern " << hex << pattern << endl << endl;
+    // reverse bits 0 & 1 to write:
+    uint32_t write_pattern =  ( (pattern & 0x4) | ((pattern & 0x2)>>1) | ((pattern & 0x1)<<1) );
+    cout << endl << test + " testing pattern " << hex << pattern <<" -> "<< write_pattern << endl << endl;
 
-    // change the value of the DMB_reserved_out bits
-    csrb6.CCB_reserved2 = ((pattern & 0x4) >> 2);
+    // change the value of the DMB_reserved_in bit 2
+    csrb6.CCB_reserved2 = ((write_pattern & 0x4) >> 2);
+    cout << " CCB_reserved2 " << csrb6.CCB_reserved2 <<endl;
 
-    // set bits [4:3] to zero
+    // set bits [4:3] of DMB_reserved_in to zero
     csrb6.DMB_reserved_out &= 0x7;
+    cout << " DMB_reserved_out " << csrb6.DMB_reserved_out <<endl;
 
-    // set bits [3:4] of DMB_reserved_out to bits [2:1] of pattern
-    csrb6.DMB_reserved_out |= ((pattern & 0x3) << 3);
+    // set bits [4:3] of DMB_reserved_in to bits [0:1] of pattern
+    csrb6.DMB_reserved_out |= ((write_pattern & 0x3) << 3);
+    cout << " DMB_reserved_out " << csrb6.DMB_reserved_out <<endl;
 
     for (int i=0; i<Niter; ++i)
     {
       // load CSRB6 with the test value
       ccb_->WriteRegister(CCB_CSRB6, csrb6.r);
 
-
+      // read rr0 bits
       RR0Bits rr0;
       rr0.r = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR0);
+
+      //cout << " DMB_reserved_in: read " << rr0.DMB_reserved_in <<endl;
+      // swap DMB_reserved_in bits 0 and 1 for comparison to pattern
+      //rr0.DMB_reserved_in = ((rr0.DMB_reserved_in & 0x4) | ((rr0.DMB_reserved_in & 0x2)>>1) | ((rr0.DMB_reserved_in & 0x1)<<1));
       cout << " DMB_reserved_in: read bit value " << rr0.DMB_reserved_in <<endl;
+      cout << " ccb_reserved2: read bit value " << rr0.CCB_reserved2 <<endl;
 
-      // compare the the result from written value
-      ok &= CompareValues(out(), test, rr0.DMB_reserved_in, pattern, true);
+      // compare the result from written value
+      ok &= CompareValues(out(), test + " pattern", rr0.DMB_reserved_in, pattern, true);
 
-
-      // read back from CSRB11
       CSRB11Bits csrb11;
       csrb11.r = ccb_->ReadRegister(CCB_CSRB11);
+      cout << " CSRB11.DMB_reserved_in: " << csrb11.DMB_reserved_in <<endl;
 
-      cout<< test + " write/read " << (pattern == csrb11.DMB_reserved_in? "OK ": "BAD ")
-          << " = " << pattern << " / " << csrb11.DMB_reserved_in << endl;
+      // compare to the result from CSRB11
+      ok &= CompareValues(out(), test + " CSRB11", rr0.DMB_reserved_in, csrb11.DMB_reserved_in, true);
+
+      // issue L1Reset after each iteration
+      L1Reset();
+    }
+  }
+
+  int errcode = (ok == false);
+  MessageOK(cout, test + " result", errcode);
+  return errcode;
+}
+
+int CCBBackplaneTester::TestDMBL1AReleaseLoopback()
+{
+  string test = TestLabelFromProcedureName(__func__);
+  bool ok = true;
+  const int Niter = 20;
+
+  // read the current value of CSRB6
+  CSRB6Bits csrb6;
+  //csrb6.r = ccb_->ReadRegister(CCB_CSRB6);
+  csrb6.r = 0;
+
+  // walk over the range of values of possible combinations of 1 bits
+  for (uint32_t pattern = 0; pattern < 2; ++pattern)
+  {
+    cout << endl << test + " testing pattern " << hex << pattern << endl << endl;
+
+    // change the value of CSRB6[0]
+    csrb6.CCB_reserved3 = pattern;
+
+    for (int i=0; i<Niter; ++i)
+    {
+      // load CSRB6 with the test value
+      ccb_->WriteRegister(CCB_CSRB6, csrb6.r);
+
+      // read rr0 bits
+      RR0Bits rr0;
+      rr0.r = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR0);
+
+      cout << " DMB_L1A_release: wrote/read bit value  " << csrb6.CCB_reserved3 << " / " << rr0.DMB_L1A_release << dec << endl;
 
       // compare the the result from written value
-      ok &= CompareValues(out(), test, csrb11.DMB_reserved_in, pattern, true);
+      ok &= CompareValues(out(), test, rr0.DMB_L1A_release, pattern, true);
 
       // issue L1Reset after each iteration
       L1Reset();

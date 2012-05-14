@@ -142,11 +142,12 @@ void CCBBackplaneTestModule::CCBBackplaneTestsPage(xgi::Input * in, xgi::Output 
   *out << tr();
   /////////////////////////////////////////////////////////
 
-    *out << tr().set("ALIGN","center");
+  *out << tr().set("ALIGN","center");
 
-    TestButton(tmb, "DMB_reserved_in (L/B)", "DMBReservedInLoopback", out);
+  TestButton(tmb, "DMB_reserved_in-loop", "DMBReservedInLoopback", out);
+  TestButton(tmb, "DMB_L1A_Release-loop", "DMBL1AReleaseLoopback", out);
 
-    *out << tr();
+  *out << tr();
 
   *out << cgicc::table();
 

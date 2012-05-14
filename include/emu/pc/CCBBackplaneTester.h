@@ -103,10 +103,16 @@ private:
 
   /**
   * Test DMB_reserved_in [2:0] via loopback board,
-  * bits [1:0] are tested by writing into bits [4:3] of DMB_reserved_out,
-  * bit 2 is tested by writing into CCB_reserved2
+  * bits [0:1] are tested by writing into bits [4:3] of DMB_reserved_out (CSRB6[14:13]),
+  * bit 2 is tested by writing into CCB_reserved2 (CSRB6[0])
   */
   int TestDMBReservedInLoopback();
+
+  /**
+   * Test DMB_L1A_Release via loopback board,
+   * tested by writing into CCB_reserved3 (CSRB6[1])
+   */
+  int TestDMBL1AReleaseLoopback();
 };
 
 
