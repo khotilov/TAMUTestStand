@@ -123,8 +123,8 @@ void CCBBackplaneTestModule::CCBBackplaneTestsPage(xgi::Input * in, xgi::Output 
 
   TestButton(tmb, "L1Reset", "L1Reset", out);
   TestButton(tmb, "TMB HardReset", "TMBHardReset", out);
-  TestButton(tmb, "Pulse Counters", "PulseCounters", out);
   TestButton(tmb, "Command Bus", "CommandBus", out);
+  TestButton(tmb, "Pulse Counters", "PulseCounters", out);
   TestButton(tmb, "Data Bus", "DataBus", out);
 
   *out << tr();
@@ -146,6 +146,23 @@ void CCBBackplaneTestModule::CCBBackplaneTestsPage(xgi::Input * in, xgi::Output 
 
   TestButton(tmb, "DMB_reserved_in-loop", "DMBReservedInLoopback", out);
   TestButton(tmb, "DMB_L1A_Release-loop", "DMBL1AReleaseLoopback", out);
+
+  *out << tr();
+  /////////////////////////////////////////////////////////
+
+  *out << tr().set("ALIGN","center");
+
+  TestButton(tmb, "DMB_loopback", "TestDMBLoopback", out);
+  TestButton(tmb, "RPC_loopback", "TestRPCLoopback", out);
+  TestButton(tmb, "Cable_connector", "TestCableConnector", out);
+  TestButton(tmb, "Fiber_connector", "TestFiberConnector", out);
+
+  *out << tr();
+  /////////////////////////////////////////////////////////
+
+  *out << tr().set("ALIGN","center");
+
+  TestButton(tmb, "Status_Loopback", "CheckStatusLoopback", out);
 
   *out << tr();
 
@@ -199,7 +216,6 @@ void CCBBackplaneTestModule::TestButton(int tmb, const string &label, const stri
   *out << cgicc::form() << endl;
   *out << cgicc::td();
 }
-
 
 
 void CCBBackplaneTestModule::CCBBackplaneRunTest(xgi::Input * in, xgi::Output * out )

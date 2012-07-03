@@ -2,6 +2,7 @@
 #define emu_pc_CCBBackplaneTester_h
 
 #include "emu/pc/TestWorkerBase.h"
+#include "emu/utils/SimpleTimer.h"
 
 
 namespace emu { namespace pc {
@@ -113,6 +114,52 @@ private:
    * tested by writing into CCB_reserved3 (CSRB6[1])
    */
   int TestDMBL1AReleaseLoopback();
+
+  /**
+   * Check status of test enable signals via test counts
+   */
+  int CheckStatusTestEnable();
+
+  /**
+   * Check status of loopback test
+   */
+  int CheckStatusLoopback(int const *, int const, std::string, emu::utils::SimpleTimer &, bool &);
+
+  /**
+   * Template for loopback tests
+   */
+  int TemplateTestLoopback(int const *, int const, std::string, std::string);
+
+  /**
+   * Check for errors in DMB loopback test
+   * report number, type, and location of errors
+   */
+  int TestDMBLoopback();
+
+  /**
+   * Check for errors in RPC loopback test
+   * report number, type, and location of errors
+   */
+  int TestRPCLoopback();
+
+  /**
+   * Template for connector tests
+   */
+  int TemplateTestConnector(int const, int const *, int const, std::string, std::string);
+
+  /**
+   * Check for errors in Skewclear Cable test
+   * report number, type, and location of errors
+   */
+  int TestCableConnector();
+
+  /**
+   * Check for errors in Fiber Link test
+   * report number, type, and location of errors
+   */
+  int TestFiberConnector();
+
+
 };
 
 

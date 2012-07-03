@@ -8,7 +8,16 @@ namespace emu { namespace pc {
 class CCB;
 
 /// Maximal width of the result register
-const int TMB_RESULT_REGISTER_WIDTH = 20;
+const uint32_t TMB_RESULT_REGISTER_WIDTH = 20;
+const uint32_t TMB_RR_WIDTH = TMB_RESULT_REGISTER_WIDTH;
+
+/// width of the result register command field
+const uint32_t TMB_RESULT_REGISTER_COMMAND_WIDTH = 8;
+const uint32_t TMB_RR_COMMAND_WIDTH = TMB_RESULT_REGISTER_COMMAND_WIDTH;
+
+/// width of the result register data field
+const uint32_t TMB_RESULT_REGISTER_DATA_WIDTH = 12;
+const uint32_t TMB_RR_DATA_WIDTH = TMB_RESULT_REGISTER_DATA_WIDTH;
 
 
 /** \class ResultRegisterSerializer
@@ -28,7 +37,7 @@ public:
   ResultRegisterSerializer(CCB *ccb, int tmb_slot);
 
   /// \return the result of serial read of TMB status bits
-  uint32_t read(int length = TMB_RESULT_REGISTER_WIDTH);
+  uint32_t read(uint32_t length = TMB_RESULT_REGISTER_WIDTH);
   
   /// set verbosoty level (it's set to 0 by default in constructor)
   void setVerbose(int level);

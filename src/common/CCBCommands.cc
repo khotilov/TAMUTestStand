@@ -7,7 +7,6 @@
 
 // Emu includes
 #include "emu/pc/CCB.h"
-#include "emu/pc/ResultRegisterSerializer.h"
 
 // system includes
 #include <iostream>
@@ -141,14 +140,16 @@ uint32_t LoadAndReadResutRegister(CCB* ccb, int tmb_slot, int load_command)
 
 uint32_t ResultRegisterCommand(uint32_t rr)
 {
-  // currently, it's first 8 bits
-  return rr & 0xFF;
+  // currently, it's first 8 bits (==TMB_RR_WIDTH)
+  static const uint32_t command_mask = (0x1<<TMB_RR_COMMAND_WIDTH)-1;
+  return rr & command_mask;
 }
 
 uint32_t ResultRegisterData(uint32_t rr)
 {
   // currently, it's 12 bits [19:8]
-  return ( rr >> 8 ) & 0xFFF;
+  static const uint32_t data_mask = (0x1<<TMB_RR_DATA_WIDTH)-1;
+  return ( rr >> TMB_RR_COMMAND_WIDTH ) & data_mask;
 }
 
 

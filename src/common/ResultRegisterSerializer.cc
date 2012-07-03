@@ -59,7 +59,7 @@ void ResultRegisterSerializer::setVerbose(int level)
 }
 
 
-uint32_t ResultRegisterSerializer::read(int length)
+uint32_t ResultRegisterSerializer::read(uint32_t length)
 {
   using std::hex;
   using std::dec;
@@ -70,8 +70,8 @@ uint32_t ResultRegisterSerializer::read(int length)
   if(verbose_>0)
     cout << "--- ResultRegisterSerializer::read ---" << endl;
 
-  int counter = 0;
-  while(counter >= 0 && counter < length && counter < TMB_RESULT_REGISTER_WIDTH)
+  uint32_t counter = 0;
+  while(counter < length && counter < TMB_RESULT_REGISTER_WIDTH)
   {
     // CSRB2 data bus command: read TMB result register through
     ccb_->WriteRegister(CCB_CSRB2_COMMAND_BUS, CCB_COM_RR_READ);
@@ -107,7 +107,7 @@ uint32_t ResultRegisterSerializer::read(int length)
 
     if(status_bit)
     {
-      counter=-1;
+      break;
     }
     else
     {
