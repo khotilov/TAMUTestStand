@@ -69,6 +69,7 @@ TAMUTestApplication::TAMUTestApplication(xdaq::ApplicationStub * s)
   // bind methods of ccbBackplaneTestModule_
   //------------------------------------------------------
   bindMemberMethod(this, &ccbBackplaneTestModule_, &CCBBackplaneTestModule::CCBBackplaneTestsPage, "CCBBackplaneTestsPage");
+  bindMemberMethod(this, &ccbBackplaneTestModule_, &CCBBackplaneTestModule::CCBBackplaneContinuousTestsPage, "CCBBackplaneContinuousTestsPage");
   bindMemberMethod(this, &ccbBackplaneTestModule_, &CCBBackplaneTestModule::CCBBackplaneRunTest, "CCBBackplaneRunTest");
   bindMemberMethod(this, &ccbBackplaneTestModule_, &CCBBackplaneTestModule::CCBBackplaneLogTestsOutput, "CCBBackplaneLogTestsOutput");
 
@@ -123,6 +124,11 @@ void TAMUTestApplication::Default(xgi::Input * in, xgi::Output * out ) throw (xg
       // a link that leads straight to the test page
       *out << cgicc::b()
         << cgicc::a("[TMB-CCB Backplane Tests]").set("href", "/" + urn + "/CCBBackplaneTestsPage" )
+        << cgicc::b() << endl;
+
+      // a link that leads straight to the continuous test page
+      *out << cgicc::b()
+        << cgicc::a("[TMB-CCB Continuous Tests]").set("href", "/" + urn + "/CCBBackplaneContinuousTestsPage" )
         << cgicc::b() << endl;
 
       // low level TMB-CCB backplane tests

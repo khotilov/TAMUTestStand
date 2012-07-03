@@ -109,7 +109,7 @@ void CCBBackplaneTestModule::CCBBackplaneTestsPage(xgi::Input * in, xgi::Output 
   // Run all tests button:
 
   *out << form().set("method","GET").set("action", "/" + urn + "/CCBBackplaneRunTest" ) << endl;
-  *out << input().set("type","submit").set("Testvalue", "Run All TMB tests").set("style", "color:blue") << endl;
+  *out << input().set("type","submit").set("value", "Run All TMB tests").set("style", "color:blue") << endl;
   *out << input().set("type","hidden").set("value", tmbStr).set("name", "tmb");
   *out << input().set("type","hidden").set("value", "All").set("name", "test_label");
   *out << form() << endl;
@@ -149,6 +149,113 @@ void CCBBackplaneTestModule::CCBBackplaneTestsPage(xgi::Input * in, xgi::Output 
 
   *out << tr();
   /////////////////////////////////////////////////////////
+
+  *out << tr().set("ALIGN","center");
+
+  TestButton(tmb, "DMB_loopback", "TestDMBLoopback", out);
+  TestButton(tmb, "RPC_loopback", "TestRPCLoopback", out);
+  TestButton(tmb, "Cable_connector", "TestCableConnector", out);
+  TestButton(tmb, "Fiber_connector", "TestFiberConnector", out);
+
+  *out << tr();
+  /////////////////////////////////////////////////////////
+
+  *out << tr().set("ALIGN","center");
+
+  TestButton(tmb, "Status_Loopback", "CheckStatusLoopback", out);
+
+  *out << tr();
+
+  *out << cgicc::table();
+
+  /////////////////////////////////////////////////////////////////////
+  // Textarea with results
+
+  *out << cgicc::textarea().set("name","TestOutput").set("WRAP","OFF").set("rows","20").set("cols","100");
+  if (tm_.GetTestOutput(tmb).str().empty())
+  {
+    tm_.GetTestOutput(tmb) << "TMB-CCB Backplane Tests "
+        << sys_->crate()->GetChamber(sys_->tmbs()[tmb]->slot())->GetLabel().c_str() << " output:" << endl;
+  }
+  *out << tm_.GetTestOutput(tmb).str() << endl;
+  *out << cgicc::textarea();
+
+  *out << form().set("method", "GET").set("action", "/" + urn + "/CCBBackplaneLogTestsOutput" ) << endl;
+  *out << input().set("type", "hidden").set("value", tmbStr).set("name", "tmb");
+  *out << input().set("type", "submit").set("value", "Save log output").set("name", "LogTestsOutput") << endl;
+  *out << input().set("type", "submit").set("value", "Clear").set("name", "ClearTestsOutput") << endl;
+  *out << form() << endl;
+
+  *out << cgicc::fieldset();
+
+  emu::utils::footer(out);
+}
+
+
+void CCBBackplaneTestModule::CCBBackplaneContinuousTestsPage(xgi::Input * in, xgi::Output * out )
+{
+  using cgicc::tr;
+  using cgicc::form;
+  using cgicc::input;
+
+  cgicc::Cgicc cgi(in);
+
+  int tmb = sys_->tmbN();
+  TMB * thisTMB = sys_->tmb();
+  Chamber * thisChamber = sys_->chamber();
+  Crate * thisCrate = sys_->crate();
+
+  if (thisCrate == 0)
+  {
+    *out << __PRETTY_FUNCTION__ << ": Current crate is not set!!!" << endl;
+  }
+  if (thisChamber == 0)
+  {
+    *out << __PRETTY_FUNCTION__ << ": Current chamber is not set!!!" << endl;
+  }
+  if (thisTMB == 0)
+  {
+    *out << __PRETTY_FUNCTION__ << ": CurrenTestt TMB is not set!!!" << endl;
+  }
+  if (thisTMB == 0 || thisChamber == 0 || thisCrate == 0)  return;
+
+
+  string urn = app_->getApplicationDescriptor()->getURN();
+
+  emu::utils::headerXdaq(out, app_,
+      toolbox::toString("%s TMB-CCB tests, %s slot=%d",
+                        thisChamber->GetLabel().c_str(), thisCrate->GetLabel().c_str(), thisTMB->slot() )
+  );
+
+  string tmbStr = toolbox::toString("%d",tmb);
+
+  *out << cgicc::fieldset().set("style","font-size: 11pt; font-family: arial;") << endl;
+  *out << cgicc::legend("Firmware tests controls:").set("style", "color:blue") <<endl;
+
+  *out << form().set("method","GET").set("action", "/" + urn + "/CCBBackplaneRunTest" ) << endl;
+  *out << input().set("type","submit").set("value", "Run All TMB tests").set("style", "color:blue") << endl;
+  *out << input().set("type","hidden").set("value", tmbStr).set("name", "tmb");
+  *out << input().set("type","hidden").set("value", "All").set("name", "test_label");
+  *out << form() << endl;
+
+  *out << cgicc::fieldset();
+
+
+  *out << cgicc::fieldset().set("style","font-size: 11pt; font-family: arial;") << endl;
+
+  ///////////////////////////////////////////
+  // Run all tests button:
+
+  *out << form().set("method","GET").set("action", "/" + urn + "/CCBBackplaneRunTest" ) << endl;
+  *out << input().set("type","submit").set("value", "Run All TMB tests").set("style", "color:blue") << endl;
+  *out << input().set("type","hidden").set("value", tmbStr).set("name", "tmb");
+  *out << input().set("type","hidden").set("value", "All").set("name", "test_label");
+  *out << form() << endl;
+
+  *out << cgicc::table().set("border","1");
+
+  ///////////////////////////////////////////
+  // Run individual test buttons:
 
   *out << tr().set("ALIGN","center");
 
@@ -245,6 +352,34 @@ void CCBBackplaneTestModule::CCBBackplaneRunTest(xgi::Input * in, xgi::Output * 
   try
   {
     tm_.GetTester("CCBBackplaneTester", tmbN_)->RunTest(test_label);
+  }
+  catch (emu::exception::Exception &e)
+  {
+    *out << e.toHTML();
+  }
+
+  this->CCBBackplaneTestsPage(in,out);
+}
+
+
+void CCBBackplaneTestModule::CheckContinuousTestsStatus(xgi::Input * in, xgi::Output * out )
+{
+  cgicc::Cgicc cgi(in);
+  cgicc::form_iterator name = cgi.getElement("tmb");
+
+  if(name != cgi.getElements().end())
+  {
+    tmbN_ = cgi["tmb"]->getIntegerValue();
+  }
+  else
+  {
+    cout << __func__ << "No tmb# in cgi input!" << endl;
+  }
+
+  try
+  {
+    //tm_.GetTester("CCBBackplaneTester", tmbN_)->RunTest(test_label);
+
   }
   catch (emu::exception::Exception &e)
   {

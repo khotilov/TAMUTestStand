@@ -38,8 +38,14 @@ public:
   /// The html interface page (XGI bound method)
   void CCBBackplaneTestsPage(xgi::Input * in, xgi::Output * out );
 
+  /// The html interface page for continuously running (long) tests (XGI bound method)
+  void CCBBackplaneContinuousTestsPage(xgi::Input * in, xgi::Output * out );
+
   /// The interface page calls this to run the tests (XGI bound method)
   void CCBBackplaneRunTest(xgi::Input * in, xgi::Output * out );
+
+  /// Call this to check on the status of continuous FW tests
+  void CheckContinuousTestsStatus(xgi::Input * in, xgi::Output * out );
 
   /// Store results into a log file (called from the TMBTestsPage)  (XGI bound method)
   void CCBBackplaneLogTestsOutput(xgi::Input * in, xgi::Output * out );
