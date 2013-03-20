@@ -3,7 +3,8 @@
 	      xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/"
 	      xmlns:xc="http://xdaq.web.cern.ch/xdaq/xsd/2004/XMLConfiguration-30">
 
-    <xc:Context url="http://localhost:20012">
+    <!--<xc:Context url="http://localhost:20012">-->
+    <xc:Context url="http://165.91.181.27:20012">
     
         <xc:Application class="emu::pc::EmuPeripheralCrateConfig" id="70" instance="0" network="local">
     	    <properties xmlns="urn:xdaq-application:EmuPeripheralCrateConfig" xsi:type="soapenc:Struct">

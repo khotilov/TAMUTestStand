@@ -111,10 +111,27 @@ void TestWorkerBase::SetTestResult(const std::string &test, int result)
 {
   if (testResults_.find(test) == testResults_.end())
   {
-    cout << __func__ << ": WARNING! test with label " << test << " was not registered. Do noting." << endl;
+    cout << __func__ << ": WARNING! test with label " << test << " was not registered. Do nothing." << endl;
     return;
   }
   testResults_[test] = result;
+}
+
+
+int TestWorkerBase::GetTestStatus(const std::string &test)
+{
+  if (testStatuses_.find(test) == testStatuses_.end())
+  {
+    cout << __func__ << ": WARNING! test with label " << test << " was not registered. Returning -1" << endl;
+    return -1;
+  }
+  return testStatuses_[test];
+}
+
+
+void TestWorkerBase::SetTestStatus(const std::string &test, int status)
+{
+  testStatuses_[test] = status;
 }
 
 
@@ -123,6 +140,14 @@ int TestWorkerBase::RunTest(const std::string &test)
   emu::utils::SimpleTimer timer;
 
   int result = 0;
+
+  // check if ccb exists
+  /*if(!ccb_->exist())
+  {
+    cout << __func__ << ": WARNING! CCB does not exist! Crate may be disconnected or powered down!" << endl;
+    out() << "WARNING! CCB does not exist! Crate may be disconnected or powered down!" << endl;
+    return -1;
+  }*/
 
   // first, special case of running all tests:
   if (test == "All")
@@ -133,6 +158,7 @@ int TestWorkerBase::RunTest(const std::string &test)
     for (std::vector<string>::iterator itest = testLabels_.begin(); itest != testLabels_.end(); ++itest)
     {
       //if (*itest == "Dummy") continue;
+      if (*itest == "TestLEDFrontPanel") continue;
 
       // run the test, if any test fails (>0), all fail
       result |= RunTest(*itest);
@@ -224,7 +250,7 @@ void TestWorkerBase::PrepareHWForTest()
     SetFPGAMode(ccb_);
 
     // issue L1Reset to reset the counters
-    L1Reset();
+    //L1Reset(); // Tests should handle resets by themselves especially firmware related tests
   }
   else
   {

@@ -58,7 +58,8 @@ __description__
 rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT/%{_prefix}/{bin,lib,include,etc}
 mkdir -p $RPM_BUILD_ROOT/%{_prefix}/include/%{_project}/%{_package}/linux
-mkdir -p $RPM_BUILD_ROOT/%{_prefix}/htdocs/%{_project}/%{_package}/xml
+#mkdir -p $RPM_BUILD_ROOT/%{_prefix}/htdocs/%{_project}/%{_package}/xml
+mkdir -p $RPM_BUILD_ROOT/%{_prefix}/htdocs/%{_project}/%{_package}/{images,xml}
 
 # This needs to exist for whatever reason
 mkdir -p %{_packagedir}/rpm/RPMBUILD/SOURCES/%{_packagename}
@@ -67,6 +68,10 @@ install -m 655 %{_packagedir}/lib/%{_os}/%{_platform}/*.so $RPM_BUILD_ROOT/%{_pr
 ( cd %{_packagedir}/include;
 find ./ \( -name "*.[hi]" -o -name "*.hpp" -o -name "*.hh" -o -name "*.hxx" \) \
 -exec install -m 655 -D {} $RPM_BUILD_ROOT/%{_prefix}/include/{} \;
+)
+( cd %{_packagedir}/images;
+find ./ \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.gif" -o -name "*.png" \) \
+-exec install -m 655 -D {} $RPM_BUILD_ROOT/%{_prefix}/htdocs/%{_project}/%{_package}/images/{} \;
 )
 ( cd %{_packagedir}/xml;
 find ./ \( -name "*.xml" -o -name "*.view" \) \
@@ -109,6 +114,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_prefix}/bin
 %{_prefix}/lib
 %{_prefix}/etc
+%{_prefix}/htdocs/%{_project}/%{_package}/images
 %{_prefix}/htdocs/%{_project}/%{_package}/xml
 
 #

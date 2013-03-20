@@ -4,6 +4,7 @@
 
 #include "toolbox/lang/Class.h"
 #include "emu/pc/CCBBackplaneTester.h"
+#include "emu/pc/FirmwareTester.h"
 #include "emu/pc/TMBTestManager.h"
 
 #include <vector>
@@ -38,18 +39,29 @@ public:
   /// The html interface page (XGI bound method)
   void CCBBackplaneTestsPage(xgi::Input * in, xgi::Output * out );
 
-  /// The html interface page for continuously running (long) tests (XGI bound method)
-  void CCBBackplaneContinuousTestsPage(xgi::Input * in, xgi::Output * out );
+  /// html interface page for firmware tests
+  void FirmwareTestsPage(xgi::Input * in, xgi::Output * out );
 
   /// The interface page calls this to run the tests (XGI bound method)
   void CCBBackplaneRunTest(xgi::Input * in, xgi::Output * out );
 
-  /// Call this to check on the status of continuous FW tests
-  void CheckContinuousTestsStatus(xgi::Input * in, xgi::Output * out );
+  /// Conducts testing of LED front panel
+  void TestLEDFrontPanel(xgi::Input * in, xgi::Output * out );
+
+  /// Updates test statuses in FirmwareTester
+  void CheckFirmwareTestEnable();
+
+  /// The interface page calls this to run firmware related commands (XGI bound method)
+  void RunFirmwareCommand(xgi::Input * in, xgi::Output * out);
 
   /// Store results into a log file (called from the TMBTestsPage)  (XGI bound method)
   void CCBBackplaneLogTestsOutput(xgi::Input * in, xgi::Output * out );
 
+  /// Store results into a log file (called from the TMBTestsPage)  (XGI bound method)
+  void FirmwareLogTestsOutput(xgi::Input * in, xgi::Output * out );
+
+  /// Set boardLabel for logging purposes (XGI bound method)
+  void SetBoardLabel(xgi::Input * in, xgi::Output * out);
 
   /// Initialize CCBBackplaneTester's for all TMBs in the "current" crate. The "current" crate has to be already set externally.
   void Init();

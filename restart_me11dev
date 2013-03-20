@@ -1,10 +1,10 @@
 #!/bin/bash
 
 
-kill -9 $(ps aux | grep xdaq | grep 20012 | awk '{print $2}')
-./scripts/start_test.sh
+kill -9 $(ps aux | grep xdaq | grep 20014 | awk '{print $2}')
+./scripts/start_test_me11dev.sh
 sleep 0.5s
-ps aux | grep xdaq | grep 20012
+ps aux | grep xdaq | grep 20014
 
 
 

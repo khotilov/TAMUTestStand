@@ -4,6 +4,8 @@
 #include "emu/pc/TestWorkerBase.h"
 #include "emu/utils/SimpleTimer.h"
 
+#include <map>
+
 
 namespace emu { namespace pc {
 
@@ -28,6 +30,11 @@ public:
   CCBBackplaneTester & operator=(const CCBBackplaneTester &);
 
   virtual ~CCBBackplaneTester();
+
+  /**
+   * Check status of test enable signals via test counts
+   */
+  int CheckFirmwareTestEnable(std::string &);
 
 private:
 
@@ -116,48 +123,9 @@ private:
   int TestDMBL1AReleaseLoopback();
 
   /**
-   * Check status of test enable signals via test counts
+   * Check for errors in LED front panel visual testing through testStatuses_
    */
-  int CheckStatusTestEnable();
-
-  /**
-   * Check status of loopback test
-   */
-  int CheckStatusLoopback(int const *, int const, std::string, emu::utils::SimpleTimer &, bool &);
-
-  /**
-   * Template for loopback tests
-   */
-  int TemplateTestLoopback(int const *, int const, std::string, std::string);
-
-  /**
-   * Check for errors in DMB loopback test
-   * report number, type, and location of errors
-   */
-  int TestDMBLoopback();
-
-  /**
-   * Check for errors in RPC loopback test
-   * report number, type, and location of errors
-   */
-  int TestRPCLoopback();
-
-  /**
-   * Template for connector tests
-   */
-  int TemplateTestConnector(int const, int const *, int const, std::string, std::string);
-
-  /**
-   * Check for errors in Skewclear Cable test
-   * report number, type, and location of errors
-   */
-  int TestCableConnector();
-
-  /**
-   * Check for errors in Fiber Link test
-   * report number, type, and location of errors
-   */
-  int TestFiberConnector();
+  int TestLEDFrontPanel();
 
 
 };

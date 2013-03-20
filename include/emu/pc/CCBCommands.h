@@ -2,6 +2,7 @@
 #define _Emu_PC_CCBCommands_h_
 
 #include <stdint.h>
+#include <string>
 #include "emu/pc/ResultRegisterSerializer.h"
 
 
@@ -49,27 +50,30 @@ const int CCB_VME_TMB_RESERVED0 = 0xBB;
 const int CCB_COM_RR0 = 0x00;
 const int CCB_COM_RR_LOAD_CCB_RX0 = 0xC0;
 const int CCB_COM_RR_READ = 0xCC;
-const int CCB_COM_RR_LOAD_COUNTER = 0xCD;
+const int CCB_COM_RR_LOAD_PULSE_COUNTER = 0xCD;
 const int CCB_COM_RR_LOAD_DATA_BUS = 0xCE;
 const int CCB_COM_RR_LOAD_COUNTERS_FLAG = 0xCF;
+const int CCB_COM_RR_LOAD_HR_PULSE_COUNTER = 0xD5;
 
-// TMB command codes related to loopback testing
+const int LENGTH_PULSE_COUNTER = 9;
+
+// custom TMB command codes related to loopback testing
   // TMB command codes related to DMB loopback
 const int CCB_COM_RR_LOAD_DMBLOOP_ERROR_COUNT = 0xD0;
 const int CCB_COM_RR_LOAD_DMBLOOP1_STAT = 0xD1;
 const int CCB_COM_RR_LOAD_DMBLOOP2_STAT = 0xD2;
 const int CCB_COM_RR_LOAD_DMBLOOP3_STAT = 0xD3;
-//const int CCB_COM_RR_LOAD_DMBLOOP4_STAT = 0xD4;
-//const int CCB_COM_RR_LOAD_DMBLOOP5_STAT = 0xD5;
   // TMB command codes related to RPC loopback
 const int CCB_COM_RR_LOAD_RPCLOOP_ERROR_COUNT = 0xD8;
 const int CCB_COM_RR_LOAD_RPCLOOP1_STAT = 0xD9;
 const int CCB_COM_RR_LOAD_RPCLOOP2_STAT = 0xDA;
 const int CCB_COM_RR_LOAD_RPCLOOP3_STAT = 0xDB;
 const int CCB_COM_RR_LOAD_RPCLOOP4_STAT = 0xDC;
-const int CCB_COM_RR_LOAD_RPCLOOP5_STAT = 0xDD;
-const int CCB_COM_RR_LOAD_RPCLOOP6_STAT = 0xDE;
-const int CCB_COM_RR_LOAD_RPCLOOP7_STAT = 0xDF;
+
+const int CCB_COM_RR_LOAD_RPCLOOP_SLOW_STAT = 0xDD;
+const int CCB_COM_RR_LOAD_RPCLOOP_HZ_TEST_COUNT = 0xDE;
+const int CCB_COM_RR_LOAD_RPCLOOP_SLOW_ERROR_COUNT = 0xDF;
+
   // TMB command codes related to skewclear cable test
 const int CCB_COM_RR_LOAD_CABLE_STAT = 0xE0;
 const int CCB_COM_RR_LOAD_CABLE1_ERROR_COUNT = 0xE1;
@@ -78,6 +82,7 @@ const int CCB_COM_RR_LOAD_CABLE3_ERROR_COUNT = 0xE3;
 const int CCB_COM_RR_LOAD_CABLE4_ERROR_COUNT = 0xE4;
 const int CCB_COM_RR_LOAD_CABLE5_ERROR_COUNT = 0xE5;
   // TMB command codes related to fiber test
+const int CCB_COM_FORCE_FIBER_ERROR = 0x7C;
 const int CCB_COM_RR_LOAD_FIBER_STAT = 0xF0;
 const int CCB_COM_RR_LOAD_FIBER1_ERROR_COUNT = 0xF1;
 const int CCB_COM_RR_LOAD_FIBER2_ERROR_COUNT = 0xF2;
@@ -86,6 +91,7 @@ const int CCB_COM_RR_LOAD_FIBER4_ERROR_COUNT = 0xF4;
 const int CCB_COM_RR_LOAD_FIBER5_ERROR_COUNT = 0xF5;
 const int CCB_COM_RR_LOAD_FIBER6_ERROR_COUNT = 0xF6;
 const int CCB_COM_RR_LOAD_FIBER7_ERROR_COUNT = 0xF7;
+const int CCB_COM_RR_LOAD_FIBER_INVALID_STAT = 0xF8;
   // TMB command codes related to test counts
 const int CCB_COM_RR_LOAD_CABLE_TEST_COUNT = 0xFC;
 const int CCB_COM_RR_LOAD_LOOP_TEST_COUNT = 0xFD;
@@ -101,13 +107,21 @@ const int CCB_COM_STOP_TRIG_LOOP = 0x1D;
 const int CCB_COM_STOP_TRIG_CABLE = 0x1E;
 const int CCB_COM_STOP_TRIG_FIBER = 0x1F;
 
-const int TEST_COUNT_COMMANDS[] =
+const int FIRMWARE_TEST_COUNT_COMMANDS[] =
     {
      CCB_COM_RR_LOAD_LOOP_TEST_COUNT,
      CCB_COM_RR_LOAD_CABLE_TEST_COUNT,
      CCB_COM_RR_LOAD_FIBER_TEST_COUNT
     };
-const int LENGTH_TEST_COUNT_COMMANDS = sizeof(TEST_COUNT_COMMANDS)/sizeof(TEST_COUNT_COMMANDS[0]);
+const int LENGTH_FIRMWARE_TEST_COUNT_COMMANDS = sizeof(FIRMWARE_TEST_COUNT_COMMANDS)/sizeof(FIRMWARE_TEST_COUNT_COMMANDS[0]);
+
+const std::string FIRMWARE_TEST_COUNT_LABELS[] =
+    {
+     "Loopback",
+     "Cable",
+     "Fiber"
+    };
+const int LENGTH_FIRMWARE_TEST_COUNT_LABELS = sizeof(FIRMWARE_TEST_COUNT_LABELS)/sizeof(FIRMWARE_TEST_COUNT_LABELS[0]);
 
 // TMB command array for DMBLOOP testing
 const int DMBLOOP_COMMANDS[] =
@@ -128,12 +142,16 @@ const int RPCLOOP_COMMANDS[] =
      CCB_COM_RR_LOAD_RPCLOOP1_STAT,
      CCB_COM_RR_LOAD_RPCLOOP2_STAT,
      CCB_COM_RR_LOAD_RPCLOOP3_STAT,
-     CCB_COM_RR_LOAD_RPCLOOP4_STAT,
-     CCB_COM_RR_LOAD_RPCLOOP5_STAT,
-     CCB_COM_RR_LOAD_RPCLOOP6_STAT,
-     CCB_COM_RR_LOAD_RPCLOOP7_STAT
+     CCB_COM_RR_LOAD_RPCLOOP4_STAT
     };
 const int LENGTH_RPCLOOP_COMMANDS = sizeof(RPCLOOP_COMMANDS)/sizeof(RPCLOOP_COMMANDS[0]);
+
+const int RPCLOOP_SLOW_COMMANDS[] =
+    {
+     CCB_COM_RR_LOAD_RPCLOOP_SLOW_ERROR_COUNT,
+     CCB_COM_RR_LOAD_RPCLOOP_SLOW_STAT
+    };
+const int LENGTH_RPCLOOP_SLOW_COMMANDS = sizeof(RPCLOOP_SLOW_COMMANDS)/sizeof(RPCLOOP_SLOW_COMMANDS[0]);
 
 // TMB command array for CABLE testing
 const int CABLE_COMMANDS[] =
@@ -157,7 +175,7 @@ const int FIBER_COMMANDS[] =
      CCB_COM_RR_LOAD_FIBER4_ERROR_COUNT,
      CCB_COM_RR_LOAD_FIBER5_ERROR_COUNT,
      CCB_COM_RR_LOAD_FIBER6_ERROR_COUNT,
-     CCB_COM_RR_LOAD_FIBER7_ERROR_COUNT
+     CCB_COM_RR_LOAD_FIBER7_ERROR_COUNT,
     };
 const int LENGTH_FIBER_COMMANDS = sizeof(FIBER_COMMANDS)/sizeof(FIBER_COMMANDS[0]);
 
@@ -231,18 +249,31 @@ union CSRB11Bits
   };
 };
 
-// Accessors to parts of DMB and RPC ERROR_COUNT command returns
+/// Accessors to the parts of HR_PULSE_COUNTER
+union HRPulseCounter
+{
+  unsigned int r;
+
+  struct{
+    unsigned int command : TMB_RR_COMMAND_WIDTH; // #7:0
+    unsigned int pulse_count : 4; // #11:8
+    unsigned int constant : 6; // #12:17
+    unsigned int tmb_clock_05p : 1; // #18
+    unsigned int tmb_clock_1 : 1; // #19
+  };
+};
+
+/// Accessors to parts of DMB and RPC ERROR_COUNT command returns
 union LoopErrorCount
 {
   unsigned int r;
 
   struct{
     unsigned int command : TMB_RR_COMMAND_WIDTH; // #7:0
-    unsigned int error_count : 11; // #18:8
+    unsigned int error_count : TMB_RR_DATA_WIDTH - 1; // #18:8
     unsigned int overflow : 1; // 19
   };
 };
-
 
 /// check if command triggers a single 25 ns pulse
 bool is25nsPulseCommand(const int command);
@@ -271,9 +302,13 @@ int Read5ReservedBits(CCB* ccb);
 /// Write TMB_reserved0 bit
 void WriteTMBReserved0Bit(CCB* ccb, int value);
 
+/// Get the board ID
+uint32_t GetBoardID();
+
+
 
 /// load TMB result register using load_command, and read in the value
-uint32_t LoadAndReadResutRegister(CCB* ccb, int tmb_slot, int load_command);
+uint32_t LoadAndReadResultRegister(CCB* ccb, int tmb_slot, int load_command);
 
 /// extract command code from TMB result register value
 uint32_t ResultRegisterCommand(uint32_t rr);

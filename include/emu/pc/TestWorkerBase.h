@@ -62,6 +62,13 @@ public:
   /// setter for the result of a test with specific label
   void SetTestResult(const std::string &test, int result);
 
+  /// Getter for the status of a test with specific label
+  /// Note: Status values must be updated through SetTestStatus, as testStatuses_ is intended for tests that do not utilize RunTest
+  int GetTestStatus(const std::string &test);
+
+  /// Setter for the status of a test with a specific label
+  void SetTestStatus(const std::string &test, int status);
+
   /// Run a test with specific label.
   /// A special case of a label is "All", which would cause running of all registered tests.
   /// \return 0 if success, numerical error code > 0 if problem
@@ -115,10 +122,13 @@ private:
   std::vector<std::string> testLabels_;
 
   /// test label -> test procedure association
-  std::map<std::string, TestProcedure> testProcedures_ ;
+  std::map<std::string, TestProcedure> testProcedures_;
 
   /// test label -> test result association
-  std::map<std::string, int> testResults_ ;
+  std::map<std::string, int> testResults_;
+
+  /// test label -> test status association
+  std::map<std::string, int> testStatuses_;
 };
 
 

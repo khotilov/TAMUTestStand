@@ -48,7 +48,10 @@ public:
 
   /// Access the output of tests for a particular #tmb
   /// If \c tmb number is -1, the "current" tmb in the "current" crate is assumed.
-  std::ostringstream & GetTestOutput(int tmb = -1);
+  std::ostringstream & GetTestOutput(std::string test_group, int tmb = -1);
+
+  /// Label of the board being tested
+  std::string boardLabel;
 
 private:
 
@@ -75,7 +78,8 @@ private:
 
   /// Keeps tests outputs for each tmb in a current crate
   //std::vector<std::ostringstream> testOutputs_;
-  std::ostringstream testOutputs_[10];
+  std::map<std::string, std::ostringstream * > testOutputs_;
+  //std::ostringstream testOutputs_[10];
 };
 
 
@@ -89,6 +93,8 @@ void TMBTestManager::RegisterTestGroup(const std::string &test_group)
     testGroupLabels_.push_back(test_group);
     std::vector<boost::shared_ptr<TestWorkerBase> > empty_vec;
     tests_[test_group] = empty_vec;
+
+    testOutputs_.insert(std::pair<std::string, std::ostringstream * >(test_group, new std::ostringstream[10]));
   }
   else
   {
@@ -104,7 +110,7 @@ void TMBTestManager::RegisterTestGroup(const std::string &test_group)
     boost::shared_ptr<TestWorkerBase> tmp(new T);
     tmp->SetTMB(tmbs[i]);
     tmp->SetCCB(ccb);
-    tmp->RedirectOutput(&testOutputs_[i]);
+    tmp->RedirectOutput(&testOutputs_[test_group][i]);
     tests_[test_group].push_back(tmp);
 
     //if (i >= testOutputs_.size())

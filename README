@@ -1,20 +1,24 @@
-Software for testing of the new Trigger Motherboard being developed at TAMU.
-The board is for the Muond Endcap detector upgrade at CMS experiment at CERN.
+   * What is it?
+
+This is a software package for testing of new Trigger Motherboard (TMB) that is being developed at Texas A&M University.
+The TMB electronic board is a part of the Muond Endcap detector upgrade project at CMS experiment at CERN's Large Hardron Collider.
+
+The TAMU TMB testing suite provides utilities for working on board prototypes, as well as a framework for production testing for ~100 of new bards.
 
 
    * Dependencies:
 
-XDAQ
-EMULIB
+XDAQ   : http://svnweb.cern.ch/trac/cmsos
+EMULIB : https://svnweb.cern.ch/trac/emu 
 
-In EMULIB it need the following packages:
+In EMULIB, the following packages are necessary:
 emu/base
 emu/soap
 emu/emuDCS/PeripheralCore
 emu/emuDCS/PeripheralApps
 emu/emuDCS/OnlineDB
 
-The EMULIB has to be installed into $HOME/TriDAS/emu
+The EMULIB has to be installed into its usual development location $HOME/TriDAS/emu
 
 
 The package is normally expected to live in the emu/emuDCS/TAMUTestStand location.

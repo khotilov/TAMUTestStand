@@ -1,0 +1,49 @@
+<?xml version='1.0'?>
+<xc:Partition xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	      xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/"
+	      xmlns:xc="http://xdaq.web.cern.ch/xdaq/xsd/2004/XMLConfiguration-30">
+
+    <xc:Context url="http://165.91.181.27:20014">
+    
+        <xc:Application class="emu::pc::EmuPeripheralCrateConfig" id="30" instance="0" network="local">
+    	      <properties xmlns="urn:xdaq-application:EmuPeripheralCrateConfig" xsi:type="soapenc:Struct">
+                <Standalone xsi:type="xsd:string">true</Standalone>
+                <XMLorDB xsi:type="xsd:string">xml</XMLorDB>
+                <EmuConfigurationID xsi:type="xsd:string">1000001</EmuConfigurationID>
+                <xmlFileName xsi:type="xsd:string">$HOME/config/pc/tamu_crate_config_2tmbs.xml</xmlFileName>
+            </properties>
+        </xc:Application>
+
+        <xc:Application class="emu::pc::TAMUTestApplication" id="40" instance="0" network="local">
+    	      <properties xmlns="urn:xdaq-application:TAMUTestApplication" xsi:type="soapenc:Struct">
+                <XMLFileName xsi:type="xsd:string">$HOME/config/pc/tamu_crate_config_2tmbs.xml</XMLFileName>
+                <TStoreFileName xsi:type="xsd:string">$PWD/xml/tstore.view</TStoreFileName>
+            </properties>
+        </xc:Application>
+
+
+        <xc:Application class="emu::me11dev::Manager" id="50" instance="0" network="local">
+            <properties xsi:type="soapenc:Struct" xmlns="urn:xdaq-application:emu::me11dev::Manager">
+              <XMLConfigFilename xsi:type="xsd:string">$HOME/config/pc/tamu_crate_config_2tmbs.xml</XMLConfigFilename>
+              <TMBSlot  xsi:type="xsd:integer">6</TMBSlot>
+            </properties>
+        </xc:Application>
+
+
+        <xc:Module>$XDAQ_ROOT/lib/libxdaq2rc.so</xc:Module>
+        <xc:Module>$XDAQ_ROOT/lib/libtstoreclient.so</xc:Module>
+        <xc:Module>$XDAQ_ROOT/lib/libxalanMsg.so</xc:Module>
+        <xc:Module>$XDAQ_ROOT/lib/libxalan-c.so</xc:Module>
+        <xc:Module>$BUILD_HOME/emu/base/lib/linux/$XDAQ_PLATFORM/libemubase.so</xc:Module>
+        <xc:Module>$BUILD_HOME/emu/soap/lib/linux/$XDAQ_PLATFORM/libemusoap.so</xc:Module>
+        <xc:Module>$BUILD_HOME/emu/emuDCS/PeripheralCore/lib/linux/$XDAQ_PLATFORM/libEmuPeripheralCore.so</xc:Module>
+        <xc:Module>$BUILD_HOME/emu/emuDCS/OnlineDB/lib/linux/$XDAQ_PLATFORM/libEmuOnlineDB.so</xc:Module>
+        <xc:Module>$BUILD_HOME/emu/emuDCS/PeripheralApps/lib/linux/$XDAQ_PLATFORM/libEmuPeripheralApps.so</xc:Module>
+        <xc:Module>$BUILD_HOME/emu/me11dev/lib/linux/$XDAQ_PLATFORM/libemume11dev.so</xc:Module>
+        <xc:Module>$PWD/lib/linux/$XDAQ_PLATFORM/libEmuTAMUTestStand.so</xc:Module>
+
+    </xc:Context>
+
+</xc:Partition>
+
+<!-- vim: set sw=2 ts=2: -->

@@ -315,7 +315,7 @@ void CCBBackplaneUtilsModule::RunBackplaneCommand(xgi::Input * in, xgi::Output *
     else if (command == "counter -> RR")
     {
       // custom command through CSRB2: load pulse counter into TMB result register
-      ccb->WriteRegister(CCB_CSRB2_COMMAND_BUS, CCB_COM_RR_LOAD_COUNTER);
+      ccb->WriteRegister(CCB_CSRB2_COMMAND_BUS, CCB_COM_RR_LOAD_PULSE_COUNTER);
     }
     else if (command == "counter flags -> RR")
     {
@@ -354,6 +354,56 @@ void CCBBackplaneUtilsModule::RunBackplaneCommand(xgi::Input * in, xgi::Output *
       // write bit #2 to CSRB6
       WriteTMBReserved0Bit(ccb, (TMBReservedBit_ == 0 ) ? 0 : 4 );
     }
+    /*else if(command == "HardReset_Test")  /// <-- vadim commented it out to make it compile
+    {
+      std::string result;
+      HRPulseCounter hrpc;
+
+      hrpc.r = LoadAndReadResultRegister(ccb, sys_->tmb()->slot(), CCB_COM_RR_LOAD_HR_PULSE_COUNTER);
+
+
+      bool ok = true;
+        int Niter = 5;
+
+        for(int i=0; i<Niter; ++i)
+        {
+          // write DataBus with some test value
+          ccb->WriteRegister(CCB_CSRB3_DATA_BUS, 0xFF);
+
+          // do TMB hard reset
+          ccb->WriteRegister(CCB_VME_TMB_HARD_RESET, 1);
+
+          // wait several sec
+          ::sleep(3);
+
+          // read counter & counter flags to check that they are 0
+          int counter_flags_read = ResultRegisterData( LoadAndReadResultRegister(ccb, sys_->tmb()->slot(), CCB_COM_RR_LOAD_COUNTERS_FLAG) );
+          int counter_read = ResultRegisterData( LoadAndReadResultRegister(ccb, sys_->tmb()->slot(), CCB_COM_RR_LOAD_PULSE_COUNTER) );
+
+          // compare data bus from result register to test value written to DataBus
+          ok &= CompareValues(out(), test + " counter flags", counter_flags_read, 0, true);
+          ok &= CompareValues(out(), test + " counter", counter_read, 0, true);
+
+          // read back DataBus from result register
+          uint32_t rr_read = LoadAndReadResultRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_DATA_BUS);
+          int command_code = ResultRegisterCommand(rr_read);
+          uint32_t data_bus_read = ResultRegisterData(rr_read);
+
+          // compare data bus from result register to test value written to DataBus
+          ok &= CompareValues(out(), test + " DataBus", data_bus_read & 0xFF, 0, true);
+          ok &= CompareValues(out(), test + " Command Code", command_code, CCB_COM_RR_LOAD_DATA_BUS, true);
+
+          bool check = ((data_bus_read == 0) &&
+                        (command_code == CCB_COM_RR_LOAD_DATA_BUS) &&
+                        (counter_flags_read == 0) &&
+                        (counter_read == 0) );
+
+          cout<< test + " write/read " << (check ? "OK " : "BAD ") << " = " << hex << 0 << " / " << data_bus_read
+              << " Command code: " << command_code << " Counter flags: " << counter_flags_read << " Counter: " << dec << counter_read << endl;
+        }
+
+    }
+*/
 
 
   }

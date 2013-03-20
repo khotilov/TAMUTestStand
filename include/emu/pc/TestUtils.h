@@ -24,6 +24,12 @@ bool CompareValues(std::ostream & out, const std::string &test, int testval, int
 /// Formatted test result printout
 void MessageOK(std::ostream & out, const std::string &test, int errcode);
 
+/// Convert unix time to formatted string
+std::string timeToString(time_t t);
+
+/// Conversion from text to integer (assuming text displays in hexadecimal)
+int atoi_hex (const std::string & text);
+
 
 }} // namespaces
 

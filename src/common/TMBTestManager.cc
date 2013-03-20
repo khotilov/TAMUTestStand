@@ -7,6 +7,7 @@
 
 // Emu includes
 #include "emu/pc/CCBBackplaneTester.h"
+#include "emu/pc/FirmwareTester.h"
 #include "emu/pc/TMBExternalTester.h"
 
 // system includes
@@ -39,6 +40,7 @@ void TMBTestManager::Init(ConfigurablePCrates * sys)
   // ****** register the tests here: ******
 
   RegisterTestGroup<CCBBackplaneTester>("CCBBackplaneTester");
+  RegisterTestGroup<FirmwareTester>("FirmwareTester");
   RegisterTestGroup<TMBExternalTester>("TMBExternalTester");
 }
 
@@ -65,14 +67,14 @@ boost::shared_ptr< TestWorkerBase > TMBTestManager::GetTester(const std::string&
 }
 
 
-std::ostringstream& TMBTestManager::GetTestOutput(int tmb)
+std::ostringstream & TMBTestManager::GetTestOutput(std::string test_group, int tmb)
 {
   if (tmb < 0)
   {
     tmb = sys_->tmbN();
   }
 
-  return testOutputs_[tmb];
+  return testOutputs_[test_group][tmb];
 }
 
 

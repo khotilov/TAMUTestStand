@@ -56,6 +56,8 @@ private:
   // use a large capacity datatype for reading in serialized TMB status:
   unsigned long long int TMBStatus_;
   
+  std::string HardResetTestResult_;
+
   int TMBReservedBit_;
 
   int Reserved5BitsWrite_, Reserved5Bits_;

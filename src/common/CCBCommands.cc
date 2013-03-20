@@ -74,6 +74,7 @@ void SetFPGAMode(CCB *ccb)
 {
   ccb->WriteRegister(CCB_CSRA1, 0x00); // CSRA1
   ccb->WriteRegister(CCB_CSRB1, 0xDEED); // CSRB1
+  //ccb->WriteRegister(CCB_CSRB1, 0xDFEF); // CSRB1
 }
 
 
@@ -129,7 +130,13 @@ void WriteTMBReserved0Bit(CCB* ccb, int value)
 }
 
 
-uint32_t LoadAndReadResutRegister(CCB* ccb, int tmb_slot, int load_command)
+uint32_t GetBoardID()
+{
+  return 0;
+}
+
+
+uint32_t LoadAndReadResultRegister(CCB* ccb, int tmb_slot, int load_command)
 {
   ccb->WriteRegister(CCB_CSRB2_COMMAND_BUS, load_command);
   ResultRegisterSerializer reader(ccb, tmb_slot);

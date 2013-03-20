@@ -7,6 +7,7 @@
 #include "emu/pc/TMBTestModule.h"
 #include "emu/pc/CCBBackplaneUtilsModule.h"
 #include "emu/pc/CCBBackplaneTestModule.h"
+#include "emu/pc/TestResultsManagerModule.h"
 
 #include "xdaq/WebApplication.h"
 
@@ -64,6 +65,9 @@ private:
 
   /// the collection of CCB & backplane utility commands
   CCBBackplaneUtilsModule ccbBackplaneUtilsModule_;
+
+  /// the test results manager module
+  TestResultsManagerModule testResultsManagerModule_;
 
   // some more members to keep local parameters and state
   xdata::String xmlFile_;

@@ -18,8 +18,7 @@ export XDAQ_TEMP=/tmp
 # export XDAQ_PLATFORM=x86_64_slc5
 #export XDAQ_DOCUMENT_ROOT=${XDAQ_ROOT}/htdocs
 
-/opt/xdaq/bin/xdaq.exe -h 165.91.181.27 -p 20012 -c $PWD/xml/tamu_test.xml -e $PWD/xml/tamu_test.profile >& test_cf.log &
-#/opt/xdaq/bin/xdaq.exe -p 20012 -h localhost -c $PWD/xml/tamu_test.xml -e $PWD/xml/tamu_test.profile >& test_cf.log &
-#/opt/xdaq/bin/xdaq.exe -l DEBUG -h 165.91.181.27 -p 20012 -c $PWD/xml/tamu_test.xml -e $PWD/xml/tamu_test.profile  >& test_debug.log &
+/opt/xdaq/bin/xdaq.exe -h 165.91.181.27 -p 20014 -c $PWD/xml/tamu_test_me11dev.xml -e $PWD/xml/tamu_test.profile >& test_me11dev.log &
+#/opt/xdaq/bin/xdaq.exe -l DEBUG -h 165.91.181.27 -p 20014 -c $PWD/xml/tamu_test_me11dev.xml -e $PWD/xml/tamu_test.profile >& test_debug.log &
 
 echo "started xdaq for TAMUTestStand with PID", $!

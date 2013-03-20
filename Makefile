@@ -29,7 +29,11 @@ Sources=\
 	CCBBackplaneUtilsModule.cc \
 	CCBBackplaneTestModule.cc \
 	TMBTestModule.cc \
-	TAMUTestApplication.cc
+	TAMUTestApplication.cc \
+	FirmwareTester.cc \
+	TestResultsManager.cc \
+	TestResultsManagerModule.cc \
+	BasicTable.cc
 
 
 IncludeDirs = \
@@ -46,8 +50,8 @@ TestLibraryDirs = \
 
 UserCFlags  = 
 UserCCFlags = 
-UserDynamicLinkFlags =
-UserStaticLinkFlags =
+UserDynamicLinkFlags = -lboost_regex -lboost_filesystem
+UserStaticLinkFlags = 
 UserExecutableLinkFlags =
 
 # These libraries can be platform specific and

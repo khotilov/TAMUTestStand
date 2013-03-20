@@ -29,6 +29,7 @@ using std::set;
 using std::hex;
 using std::dec;
 using std::boolalpha;
+using std::map;
 
 
 CCBBackplaneTester::CCBBackplaneTester()
@@ -75,17 +76,15 @@ void CCBBackplaneTester::RegisterTestProcedures()
   RegisterTheTest("CCBClock40", boost::bind( &CCBBackplaneTester::TestCCBClock40, this));
   RegisterTheTest("DMBReservedInLoopback", boost::bind( &CCBBackplaneTester::TestDMBReservedInLoopback, this));
   RegisterTheTest("DMBL1AReleaseLoopback", boost::bind( &CCBBackplaneTester::TestDMBL1AReleaseLoopback, this));
+  RegisterTheTest("TestLEDFrontPanel", boost::bind( &CCBBackplaneTester::TestLEDFrontPanel, this));
   RegisterTheTest("Dummy", boost::bind( &CCBBackplaneTester::TestDummy, this));
-  RegisterTheTest("TestDMBLoopback", boost::bind( &CCBBackplaneTester::TestDMBLoopback, this));
-  RegisterTheTest("TestRPCLoopback", boost::bind( &CCBBackplaneTester::TestRPCLoopback, this));
-  RegisterTheTest("TestCableConnector", boost::bind( &CCBBackplaneTester::TestCableConnector, this));
-  RegisterTheTest("TestFiberConnector", boost::bind( &CCBBackplaneTester::TestFiberConnector, this));
-  //RegisterTheTest("CheckStatusLoopback", boost::bind( &CCBBackplaneTester::CheckStatusLoopback, this));
+
+  SetTestStatus("TestLEDFrontPanel", -1);
 }
 
 
 ////////////////////////////////////////////////////
-// Actual tests:RegisterTheTest("DMBReservedOut", boost::bind( &CCBBackplaneTester::TestDMBReservedOut, this));
+// Actual tests:
 ////////////////////////////////////////////////////
 
 int CCBBackplaneTester::TestL1Reset()
@@ -103,15 +102,15 @@ int CCBBackplaneTester::TestL1Reset()
     L1Reset();
 
     // read the counter & the counter flags to check that they are 0 after the L1Reset
-    int counter_flags_read = ResultRegisterData( LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTERS_FLAG) );
-    int counter_read = ResultRegisterData( LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTER) );
+    int counter_flags_read = ResultRegisterData( LoadAndReadResultRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTERS_FLAG) );
+    int counter_read = ResultRegisterData( LoadAndReadResultRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_PULSE_COUNTER) );
 
     // compare data bus from result register to test value written to DataBus
     ok &= CompareValues(out(), test + " counter flags", counter_flags_read, 0, true);
     ok &= CompareValues(out(), test + " counter", counter_read, 0, true);
     
     // read back DataBus from result register
-    uint32_t rr_read = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_DATA_BUS);
+    uint32_t rr_read = LoadAndReadResultRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_DATA_BUS);
     int command_code = ResultRegisterCommand(rr_read);
     uint32_t data_bus_read = ResultRegisterData(rr_read);
     
@@ -156,15 +155,15 @@ int CCBBackplaneTester::TestTMBHardReset()
     sleep(3);
     
     // read counter & counter flags to check that they are 0
-    int counter_flags_read = ResultRegisterData( LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTERS_FLAG) );
-    int counter_read = ResultRegisterData( LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTER) );
+    int counter_flags_read = ResultRegisterData( LoadAndReadResultRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTERS_FLAG) );
+    int counter_read = ResultRegisterData( LoadAndReadResultRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_PULSE_COUNTER) );
 
     // compare data bus from result register to test value written to DataBus
     ok &= CompareValues(out(), test + " counter flags", counter_flags_read, 0, true);
     ok &= CompareValues(out(), test + " counter", counter_read, 0, true);
     
     // read back DataBus from result register
-    uint32_t rr_read = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_DATA_BUS);
+    uint32_t rr_read = LoadAndReadResultRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_DATA_BUS);
     int command_code = ResultRegisterCommand(rr_read);
     uint32_t data_bus_read = ResultRegisterData(rr_read);
     
@@ -202,7 +201,7 @@ int CCBBackplaneTester::TestPulseCounters()
     cout << test + " command & flag " << hex << command << " " << counter_flag << dec << endl;
 
     // read pulse counter flags from TMB RR:
-    int counter_flags_read = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTERS_FLAG);
+    int counter_flags_read = LoadAndReadResultRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTERS_FLAG);
     counter_flags_read = ResultRegisterData(counter_flags_read);
 
     // make sure counter flags are off!!!
@@ -226,7 +225,7 @@ int CCBBackplaneTester::TestPulseCounters()
     }
 
     // read pulse counter flags from TMB RR:
-    counter_flags_read = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTERS_FLAG);
+    counter_flags_read = LoadAndReadResultRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTERS_FLAG);
     counter_flags_read = ResultRegisterData(counter_flags_read);
 
     cout<< test + " flags write/read " << (counter_flags_read == counter_flag ? "OK " : "BAD ") << counter_flag << " " << counter_flags_read << endl;
@@ -236,7 +235,7 @@ int CCBBackplaneTester::TestPulseCounters()
 
 
     // read the total pulse counter out of the TMB RR:
-    uint32_t counter_read = ResultRegisterData( LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_COUNTER) );
+    uint32_t counter_read = ResultRegisterData( LoadAndReadResultRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_PULSE_COUNTER) );
 
     // compare to the expected numbers
     if (is25nsPulseCommand(command))
@@ -281,7 +280,7 @@ int CCBBackplaneTester::TestCommandBus()
     for (int i = 0; i < Niter; ++i)
     {
       // load result register with the command code, read it back, and extract the command field
-      uint32_t command_code = ResultRegisterCommand( LoadAndReadResutRegister(ccb_, tmb_->slot(), reg[j]) );
+      uint32_t command_code = ResultRegisterCommand( LoadAndReadResultRegister(ccb_, tmb_->slot(), reg[j]) );
 
       cout << test + " write/read " << (command_code == reg[j] ? "OK " : "BAD ") << " = " << reg[j] << " / " << command_code << endl;
 
@@ -306,14 +305,14 @@ int CCBBackplaneTester::TestCCBReserved()
   RR0Bits rr0;
 
   //  CCB_reserved0 - trivial read-only test
-  rr0.r = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR0);
+  rr0.r = LoadAndReadResultRegister(ccb_, tmb_->slot(), CCB_COM_RR0);
   cout << " CCB_reserved0: read bit value " << rr0.CCB_reserved0 <<endl;
   // reset the counters
   L1Reset();
 
 
   //  CCB_reserved1 - trivial read-only test
-  rr0.r = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR0);
+  rr0.r = LoadAndReadResultRegister(ccb_, tmb_->slot(), CCB_COM_RR0);
   cout << " CCB_reserved1: read bit value " << rr0.CCB_reserved1 <<endl;
   // reset the counters
   L1Reset();
@@ -347,7 +346,7 @@ int CCBBackplaneTester::TestCCBReserved()
     usleep(50);
 
     // read RR0 bits from TMB
-    rr0.r = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR0);
+    rr0.r = LoadAndReadResultRegister(ccb_, tmb_->slot(), CCB_COM_RR0);
 
     // compare the read out bit to the written value
     ok &= CompareValues(out(), "CCBReserved2", rr0.CCB_reserved2, csrb6.CCB_reserved2, true);
@@ -398,7 +397,7 @@ int CCBBackplaneTester::TestTMBReservedOut()
 
       // read back from result register
       RR0Bits rr;
-      rr.r = LoadAndReadResutRegister(ccb_, tmb_->slot(), 0);
+      rr.r = LoadAndReadResultRegister(ccb_, tmb_->slot(), 0);
 
       cout<< test + " write/read " << (pattern == rr.TMB_reserved_out ? "OK " : "BAD ")
           << " = " << pattern  << " / " << rr.TMB_reserved_out << endl;
@@ -479,7 +478,7 @@ int CCBBackplaneTester::TestDataBus()
       ccb_->WriteRegister(CCB_CSRB3_DATA_BUS, reg[j]);
       
       // read back DataBus from result register
-      uint32_t data_bus_read = ResultRegisterData( LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_DATA_BUS) );
+      uint32_t data_bus_read = ResultRegisterData( LoadAndReadResultRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_DATA_BUS) );
       
       cout<< test + " write/read "<< (data_bus_read == reg[j]? "OK ": "BAD ")
           << " = " << hex << reg[j] << " / " << data_bus_read << dec <<endl;
@@ -508,13 +507,13 @@ int CCBBackplaneTester::TestCCBClock40()
 
   int repeat_count = 0;
 
-  uint32_t prev_clock_val = ResultRegisterData( LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_CCB_RX0) );
+  uint32_t prev_clock_val = ResultRegisterData( LoadAndReadResultRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_CCB_RX0) );
   for(int i=1; i<Niter; ++i)
   {
     cout << " clock_val " << prev_clock_val << endl;
     
     // load ccb_clock40_enable or ccb_rx0 value into RR
-    uint32_t clock_val = ResultRegisterData( LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_CCB_RX0) );
+    uint32_t clock_val = ResultRegisterData( LoadAndReadResultRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_CCB_RX0) );
     
     if (clock_val == prev_clock_val)
     {
@@ -572,7 +571,7 @@ int CCBBackplaneTester::TestDMBReservedInLoopback()
 
       // read rr0 bits
       RR0Bits rr0;
-      rr0.r = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR0);
+      rr0.r = LoadAndReadResultRegister(ccb_, tmb_->slot(), CCB_COM_RR0);
 
       //cout << " DMB_reserved_in: read " << rr0.DMB_reserved_in <<endl;
       // swap DMB_reserved_in bits 0 and 1 for comparison to pattern
@@ -626,12 +625,12 @@ int CCBBackplaneTester::TestDMBL1AReleaseLoopback()
 
       // read rr0 bits
       RR0Bits rr0;
-      rr0.r = LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR0);
+      rr0.r = LoadAndReadResultRegister(ccb_, tmb_->slot(), CCB_COM_RR0);
 
       cout << " DMB_L1A_release: wrote/read bit value  " << csrb6.CCB_reserved3 << " / " << rr0.DMB_L1A_release << dec << endl;
 
       // compare the the result from written value
-      ok &= CompareValues(out(), test, rr0.DMB_L1A_release, pattern, true);
+      ok &= CompareValues(out(), test + " DMB_L1A_release", rr0.DMB_L1A_release, pattern, true);
 
       // issue L1Reset after each iteration
       L1Reset();
@@ -643,180 +642,35 @@ int CCBBackplaneTester::TestDMBL1AReleaseLoopback()
   return errcode;
 }
 
-int CCBBackplaneTester::CheckStatusTestEnable()
+int CCBBackplaneTester::TestLEDFrontPanel()
 {
-  int status_code = 0x0;
-  for(int i = 0; i < LENGTH_TEST_COUNT_COMMANDS; ++i)
+  string test = TestLabelFromProcedureName(__func__);
+  // Result is updated in CCBBackplaneTesterModule
+  int result = GetTestResult("TestLEDFrontPanel");
+
+  CompareValues(out(), test + " LED_Errors", 0, result, true);
+  /*//Log test results
+  if(result)
   {
-    LoopErrorCount read_0, read_1;
-    read_0.r = LoadAndReadResutRegister(ccb_, tmb_->slot(), TEST_COUNT_COMMANDS[i]);
-    usleep(25);
-    read_1.r = LoadAndReadResutRegister(ccb_, tmb_->slot(), TEST_COUNT_COMMANDS[i]);
-    if(read_0.error_count != read_1.error_count)
-      status_code |= (0x1 << i);
-  }
-
-  return status_code;
-}
-
-int CCBBackplaneTester::CheckStatusLoopback(int const * command_array, int const length_command_array, string label, emu::utils::SimpleTimer & timer, bool & ok)
-{
-  const int error_count_command = command_array[0];
-
-  LoopErrorCount r;
-  r.r = LoadAndReadResutRegister(ccb_, tmb_->slot(), error_count_command);
-  int test_count = ResultRegisterData(LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_RR_LOAD_LOOP_TEST_COUNT));
-  cout << label <<"_loopback Error Count: " << dec << r.error_count << endl;
-  cout << "Time: " << timer.sec() << endl;
-  cout << "Test Count: " << test_count << endl;
-  cout << "Counter Overflow: "<< boolalpha << r.overflow << endl;
-  if(r.error_count!=0) //Indicates errors
-  {
-    // Report error count and counter overflow status
-    if(r.overflow)
-      out() << label << " Loopback Error Count: " << dec << r.error_count << " Counter Overflow!" << "\n";
-    else
-      out() << label << "Loopback Error Count: " << dec << r.error_count << "\n";
-
-    out() << "\tErrors from bits: ";
-    // Walk over range of commands
-    for(int command_index = 1; command_index < length_command_array; ++command_index)
+    out() << "The following LEDs did not display correctly: ";
+    cout << "LED ERRORS: ";
+    for(int i=0; i<LENGTH_PULSE_COUNTER; ++i)
     {
-      // Get status flags
-      uint32_t stat = ResultRegisterData(LoadAndReadResutRegister(ccb_, tmb_->slot(), command_array[command_index]));
-
-      // Begin log of status register
-      cout << "\t" << label << "LOOP" << command_index << "_STAT: ";
-
-      // Walk over DMBLOOP status bits
-      for(uint32_t stat_index=0; stat_index < TMB_RR_DATA_WIDTH; ++stat_index)
+      if(result & (0x1<<i))
       {
-        // Check for individual bit errors
-        if(stat&&(0x1<<stat_index))
-        {
-          ok &= false;
-          out() << command_index*TMB_RR_DATA_WIDTH + stat_index << ' ';
-          cout << '1';
-        }
-        else
-        {
-          cout << '0';
-        }
-      }
-      cout << endl;
-
-    }
-    out() << endl;
-
-  }
-  cout << endl;
-
-  int errcode = (ok == false);
-  //MessageOK(cout, test + " result", errcode);
-  return errcode;
-}
-
-int CCBBackplaneTester::TemplateTestLoopback(int const * command_array, int const length_command_array, string label, string test)
-{
-  bool ok = true;
-  //uint32_t test_count = 0;
-  unsigned int sleep_time = 1;
-  const int Niter = 20;
-
-  //const int error_count_command = command_array[0];
-
-  // Start timer
-  emu::utils::SimpleTimer timer;
-  L1Reset();
-  // Start test
-  LoadAndReadResutRegister(ccb_, tmb_->slot(), CCB_COM_START_TRIG_LOOP);
-  for (int i=0; i<Niter; ++i)
-  {
-    usleep(sleep_time);
-    CheckStatusLoopback(command_array, length_command_array, label, timer, ok);
-    sleep_time*=2;
-  }
-
-  int errcode = (ok == false);
-  MessageOK(cout, test + " result", errcode);
-  return errcode;
-}
-
-int CCBBackplaneTester::TestDMBLoopback()
-{
-  string test = TestLabelFromProcedureName(__func__);
-  int errcode = TemplateTestLoopback(DMBLOOP_COMMANDS, LENGTH_DMBLOOP_COMMANDS, "DMB", test);
-  return errcode;
-}
-
-int CCBBackplaneTester::TestRPCLoopback()
-{
-  string test = TestLabelFromProcedureName(__func__);
-  int errcode = TemplateTestLoopback(RPCLOOP_COMMANDS, LENGTH_RPCLOOP_COMMANDS, "RPC", test);
-  return errcode;
-}
-
-int CCBBackplaneTester::TemplateTestConnector(int const start_command, int const * command_array, int const length_command_array, string label, string test)
-{
-  bool ok = true;
-  unsigned int sleeptime = 1;
-  const int Niter = 20;
-
-  const int load_stat_command = command_array[0];
-
-  // Start timer
-  emu::utils::SimpleTimer timer;
-  L1Reset();
-  // Start test
-  LoadAndReadResutRegister(ccb_, tmb_->slot(), start_command);
-  for (int i=0; i<Niter; ++i)
-  {
-    usleep(sleeptime);
-    uint32_t connector_stat = LoadAndReadResutRegister(ccb_, tmb_->slot(), load_stat_command);
-    cout << "Time: " << timer.sec() << endl;
-    cout << label << " Error Stat: ";
-    for(unsigned int j=0; j < TMB_RR_DATA_WIDTH; ++j)
-    {
-      if(connector_stat&&(0x1<<j))
+        out() << i << " ";
         cout << '1';
+      }
       else
         cout << '0';
     }
+    out() << endl;
     cout << endl;
-    if(connector_stat)
-    {
-      ok &= !(connector_stat);
-      for(int stat_index=1; stat_index<length_command_array; ++stat_index)
-      {
-        if((connector_stat>>stat_index)&&0x1)
-        {
-          int errorcount = LoadAndReadResutRegister(ccb_, tmb_->slot(), command_array[stat_index]);
-          out() << test << " -> " << label << stat_index << " Error Count: "<< dec << errorcount << endl;
-          cout << '\t' << label << stat_index << " Error Count: "<< dec << errorcount << endl;
-        }
-      }
-    }
-    sleeptime*=2;
-  }
+  }*/
 
-  int errcode = (ok == false);
+  int errcode = result;
   MessageOK(cout, test + " result", errcode);
   return errcode;
 }
-
-int CCBBackplaneTester::TestCableConnector()
-{
-  string test = TestLabelFromProcedureName(__func__);
-  int errcode = TemplateTestConnector(CCB_COM_START_TRIG_CABLE, CABLE_COMMANDS, LENGTH_CABLE_COMMANDS, "Cable", test);
-  return errcode;
-}
-
-int CCBBackplaneTester::TestFiberConnector()
-{
-  string test = TestLabelFromProcedureName(__func__);
-  int errcode = TemplateTestConnector(CCB_COM_START_TRIG_FIBER, FIBER_COMMANDS, LENGTH_FIBER_COMMANDS, "Fiber", test);
-  return errcode;
-}
-
 
 }} // namespaces

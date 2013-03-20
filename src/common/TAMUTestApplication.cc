@@ -43,6 +43,7 @@ TAMUTestApplication::TAMUTestApplication(xdaq::ApplicationStub * s)
 , tmbTestModule_(this, &teststand_)
 , ccbBackplaneTestModule_(this, &teststand_)
 , ccbBackplaneUtilsModule_(this, &teststand_)
+, testResultsManagerModule_(this)
 {
   //------------------------------------------------------
   // bind methods
@@ -69,9 +70,13 @@ TAMUTestApplication::TAMUTestApplication(xdaq::ApplicationStub * s)
   // bind methods of ccbBackplaneTestModule_
   //------------------------------------------------------
   bindMemberMethod(this, &ccbBackplaneTestModule_, &CCBBackplaneTestModule::CCBBackplaneTestsPage, "CCBBackplaneTestsPage");
-  bindMemberMethod(this, &ccbBackplaneTestModule_, &CCBBackplaneTestModule::CCBBackplaneContinuousTestsPage, "CCBBackplaneContinuousTestsPage");
+  bindMemberMethod(this, &ccbBackplaneTestModule_, &CCBBackplaneTestModule::FirmwareTestsPage, "FirmwareTestsPage");
   bindMemberMethod(this, &ccbBackplaneTestModule_, &CCBBackplaneTestModule::CCBBackplaneRunTest, "CCBBackplaneRunTest");
+  bindMemberMethod(this, &ccbBackplaneTestModule_, &CCBBackplaneTestModule::RunFirmwareCommand, "RunFirmwareCommand");
   bindMemberMethod(this, &ccbBackplaneTestModule_, &CCBBackplaneTestModule::CCBBackplaneLogTestsOutput, "CCBBackplaneLogTestsOutput");
+  bindMemberMethod(this, &ccbBackplaneTestModule_, &CCBBackplaneTestModule::FirmwareLogTestsOutput, "FirmwareLogTestsOutput");
+  bindMemberMethod(this, &ccbBackplaneTestModule_, &CCBBackplaneTestModule::TestLEDFrontPanel, "TestLEDFrontPanel");
+  bindMemberMethod(this, &ccbBackplaneTestModule_, &CCBBackplaneTestModule::SetBoardLabel, "SetBoardLabel");
 
   //------------------------------------------------------
   // bind methods of ccbBackplaneUtilsModule_
@@ -82,8 +87,14 @@ TAMUTestApplication::TAMUTestApplication(xdaq::ApplicationStub * s)
   bindMemberMethod(this, &ccbBackplaneUtilsModule_, &CCBBackplaneUtilsModule::HardReset, "HardReset");
   bindMemberMethod(this, &ccbBackplaneUtilsModule_, &CCBBackplaneUtilsModule::CCBConfig, "CCBConfig");
   bindMemberMethod(this, &ccbBackplaneUtilsModule_, &CCBBackplaneUtilsModule::CCBSignals, "CCBSignals");
-
   bindMemberMethod(this, &ccbBackplaneUtilsModule_, &CCBBackplaneUtilsModule::RunBackplaneCommand, "RunBackplaneCommand");
+
+  //------------------------------------------------------
+  // bind methods of testResultsManagerModule_
+  //------------------------------------------------------
+  bindMemberMethod(this, &testResultsManagerModule_, &TestResultsManagerModule::TestResultsManagerPage, "TestResultsManagerPage");
+  bindMemberMethod(this, &testResultsManagerModule_, &TestResultsManagerModule::ProcessLogDirectory, "ProcessLogDirectory");
+  bindMemberMethod(this, &testResultsManagerModule_, &TestResultsManagerModule::SetPageMode, "SetPageMode");
 
   //----------------------------
   // initialize variables
@@ -128,12 +139,17 @@ void TAMUTestApplication::Default(xgi::Input * in, xgi::Output * out ) throw (xg
 
       // a link that leads straight to the continuous test page
       *out << cgicc::b()
-        << cgicc::a("[TMB-CCB Continuous Tests]").set("href", "/" + urn + "/CCBBackplaneContinuousTestsPage" )
+        << cgicc::a("[TMB-CCB Firmware Tests]").set("href", "/" + urn + "/FirmwareTestsPage" )
         << cgicc::b() << endl;
 
       // low level TMB-CCB backplane tests
       *out << cgicc::b()
         << cgicc::a("[Low-level CCB Utilities]").set("href", "/" + urn + "/CCBLowLevelUtilsPage" )
+        << cgicc::b() << endl;
+
+      // a link that leads straight to the test results page
+      *out << cgicc::b()
+        << cgicc::a("[TMB-CCB Test Results]").set("href", "/" + urn + "/TestResultsManagerPage" )
         << cgicc::b() << endl;
     }
 
@@ -447,12 +463,12 @@ void TAMUTestApplication::CrateContentsPage(xgi::Input * in, xgi::Output * out )
       int slot = teststand_.tmbs()[i]->slot();
       if(slot == ii)
       {
-	*out << td() << "TMB / RAT / ALCT" << td();
+        *out << td() << "TMB / RAT / ALCT" << td();
 
-	*out << td();
-	*out << cgicc::a("TMB Tests")
-	    .set("href", toolbox::toString("/%s/TMBTestsPage?tmb=%d", urn.c_str(), i) ) << endl;
-	*out << td();
+        *out << td();
+        *out << cgicc::a("TMB Tests")
+            .set("href", toolbox::toString("/%s/TMBTestsPage?tmb=%d", urn.c_str(), i) ) << endl;
+        *out << td();
       }
     }
 
