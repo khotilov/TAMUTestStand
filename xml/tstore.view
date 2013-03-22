@@ -70,7 +70,7 @@
         <![CDATA[]]>
       </sql:parameter>
       <sql:parameter name="MAX">
-        <![CDATA[50]]>
+        <![CDATA[1000]]>
       </sql:parameter>
       <![CDATA[select EMU_CONFIG_ID from (select EMU_CONFIG_ID from EMU_CONFIGURATION where EMU_ENDCAP_SIDE='$SIDE' order by EMU_CONFIG_ID desc) where rownum<=$MAX]]>
     </sql:query>
@@ -101,9 +101,12 @@
         <![CDATA[]]>
       </sql:parameter>
       <sql:parameter name="MAX">
-        <![CDATA[50]]>
+        <![CDATA[1000]]>
       </sql:parameter>
-      <![CDATA[select EMU_CONFIG_ID from (select EMU_CONFIG_ID from EMU_CONFIGURATION where EMU_ENDCAP_SIDE='$SIDE' order by EMU_CONFIG_ID desc) where rownum<=$MAX]]>
+      <![CDATA[select
+EMU_CONFIG_ID, EMU_CONFIG_TIME, DESCRIPTION from
+  (select EMU_CONFIG_ID, EMU_CONFIG_TIME, DESCRIPTION from EMU_CONFIGURATION where EMU_ENDCAP_SIDE='$SIDE' order by EMU_CONFIG_ID desc)
+where rownum<=$MAX]]>
     </sql:query>
 
     <sql:query xmlns:sql="urn:tstore-view-SQL" name="configuration_maxid_side" expectedRows="1">
