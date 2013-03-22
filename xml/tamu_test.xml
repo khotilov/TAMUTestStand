@@ -7,7 +7,7 @@
     <xc:Context url="http://165.91.181.27:20012">
     
         <xc:Application class="emu::pc::EmuPeripheralCrateConfig" id="70" instance="0" network="local">
-    	    <properties xmlns="urn:xdaq-application:EmuPeripheralCrateConfig" xsi:type="soapenc:Struct">
+            <properties xmlns="urn:xdaq-application:EmuPeripheralCrateConfig" xsi:type="soapenc:Struct">
                 <Standalone xsi:type="xsd:string">true</Standalone>
                 <XMLorDB xsi:type="xsd:string">xml</XMLorDB>
                 <EmuConfigurationID xsi:type="xsd:string">1000001</EmuConfigurationID>
@@ -17,9 +17,10 @@
         </xc:Application>
 
         <xc:Application class="emu::pc::TAMUTestApplication" id="80" instance="0" network="local">
-    	    <properties xmlns="urn:xdaq-application:TAMUTestApplication" xsi:type="soapenc:Struct">
-        	<XMLFileName xsi:type="xsd:string">$PWD/xml/tamu_crate_config.xml</XMLFileName>
-        	<TStoreFileName xsi:type="xsd:string">$PWD/xml/tstore.view</TStoreFileName>
+            <properties xmlns="urn:xdaq-application:TAMUTestApplication" xsi:type="soapenc:Struct">
+                <XMLFileName xsi:type="xsd:string">$PWD/xml/tamu_crate_config.xml</XMLFileName>
+                <TStoreFileName xsi:type="xsd:string">$PWD/xml/tstore.view</TStoreFileName>
+                <TMBSlot  xsi:type="xsd:integer">4</TMBSlot>
             </properties>
         </xc:Application>
 

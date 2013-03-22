@@ -44,6 +44,10 @@ TAMUTestApplication::TAMUTestApplication(xdaq::ApplicationStub * s)
 , ccbBackplaneTestModule_(this, &teststand_)
 , ccbBackplaneUtilsModule_(this, &teststand_)
 , testResultsManagerModule_(this)
+, xmlFile_("NOT_DEFINED.xml")
+, tstoreFile_("NOT_DEFINED.xml")
+, tmbSlot_(-1)
+, parsed_(0)
 {
   //------------------------------------------------------
   // bind methods
@@ -100,11 +104,10 @@ TAMUTestApplication::TAMUTestApplication(xdaq::ApplicationStub * s)
   // initialize variables
   //----------------------------
 
-  xmlFile_ = tstoreFile_ = "NOT_DEFINED.xml" ;
-  this->getApplicationInfoSpace()->fireItemAvailable("XMLFileName", &xmlFile_);
-  this->getApplicationInfoSpace()->fireItemAvailable("TStoreFileName", &tstoreFile_);
-
-  parsed_=0;
+  xdata::InfoSpace *is = getApplicationInfoSpace();
+  is->fireItemAvailable("XMLFileName", &xmlFile_);
+  is->fireItemAvailable("TStoreFileName", &tstoreFile_);
+  is->fireItemAvailable("TMBSlot", &tmbSlot_ );
 }
 
 
@@ -252,8 +255,12 @@ void TAMUTestApplication::CrateSelection(xgi::Input * in, xgi::Output * out )
       if (value == teststand_.crates()[i]->GetLabel())
       {
         teststand_.SetCurrentCrate(i);
+        teststand_.useTMBInSlot(tmbSlot_);
+
         tmbTestModule_.Init();
+
         ccbBackplaneTestModule_.Init();
+
         break;
       }
     }
@@ -271,7 +278,7 @@ bool TAMUTestApplication::ParseXML()
   if (teststand_.crates().size() <= 0) return false;
 
   teststand_.SetCurrentCrate(0);
-  teststand_.SetCurrentTMB(0);
+  teststand_.useTMBInSlot(tmbSlot_);
 
   tmbTestModule_.Init();
   ccbBackplaneTestModule_.Init();

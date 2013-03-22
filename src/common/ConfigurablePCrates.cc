@@ -21,6 +21,8 @@
 #include "emu/pc/RAT.h"
 #include "emu/pc/VMECC.h"
 #include "emu/pc/DDU.h"
+#include "emu/utils/String.h"
+
 
 // xdaq includes
 #include "xdaq/WebApplication.h"
@@ -231,11 +233,42 @@ bool ConfigurablePCrates::SetCurrentTMB(int t)
 
   thisTMB_ = tmbs_[t];
 
-  thisChamber_ = thisCrate_->GetChamber(thisTMB_->slot());
+  thisChamber_ = thisCrate_->GetChamber(thisTMB_->GetTmbSlot());
 
   thisTMBN_ = t;
 
+  cout << "Current TMB was set:  slot " << thisTMB_->GetTmbSlot() << "  index " << t << "  in crate #" << thisCrateN_ << endl;
+
   return true;
 }
+
+
+void ConfigurablePCrates::useTMBInSlot(int slot)
+{
+  if (slot <= 0 && thisTMB_ != NULL) return; // keep the previous thisTMB_
+
+  for (size_t k = 0; k < tmbs_.size(); ++k)
+  {
+    if (tmbs_[k]->GetTmbSlot() == slot)
+    {
+      thisTMB_ = tmbs_[k];
+
+      thisChamber_ = thisCrate_->GetChamber(slot);
+
+      thisTMBN_ = k;
+
+      cout << "Current TMB was set:  slot "<< slot << "  index "<< k << "  in crate #" << thisCrateN_ << endl;
+
+      return;
+    }
+  }
+
+  // don't have this specified slot
+  XCEPT_RAISE(xcept::Exception,
+     string("Misconfiguration: could not assign TMB with slot ") +
+       emu::utils::stringFrom(slot) );
+}
+
+
 
 }}  // namespaces

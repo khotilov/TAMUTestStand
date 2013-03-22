@@ -72,6 +72,8 @@ private:
   // some more members to keep local parameters and state
   xdata::String xmlFile_;
   xdata::String tstoreFile_;
+  xdata::Integer tmbSlot_;
+
   int parsed_;
 };
 

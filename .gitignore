@@ -5,6 +5,7 @@
 *.eps
 *.ps
 *.log*
+*.svn*
 
 # directories
 

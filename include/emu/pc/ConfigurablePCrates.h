@@ -64,11 +64,22 @@ public:
    */
   bool Configure(const std::string & xml_filename, const std::string & tstore_filename, bool force_configure = false);
 
-  /// set the current crate index and
+  /// set the current crate index and also set current TMB to the lowest slot# with TMB
   bool SetCurrentCrate(int c);
 
-  /// set the current TMB (or chamber) index in the current crate
+  /// set the current TMB (or chamber) index in the current crate 
+  /// Index starts from 0, and 0 means "set current the lowest slot# with TMB"
   bool SetCurrentTMB(int t);
+
+
+  /**
+   * This method allows to assign a TMB in a specific slot for this crate.
+   * By default, in the constructor, the first available TMB with the lowest
+   * slot number is used. Also, if slot<=0, the assignment doesn't change.
+   * Throws when tmb was not successfully assigned.
+   */
+  void useTMBInSlot(int slot);
+
 
   /// vector of all crates
   std::vector<Crate*> & crates();

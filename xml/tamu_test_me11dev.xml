@@ -18,14 +18,15 @@
     	      <properties xmlns="urn:xdaq-application:TAMUTestApplication" xsi:type="soapenc:Struct">
                 <XMLFileName xsi:type="xsd:string">$HOME/config/pc/tamu_crate_config_2tmbs.xml</XMLFileName>
                 <TStoreFileName xsi:type="xsd:string">$PWD/xml/tstore.view</TStoreFileName>
+                <TMBSlot  xsi:type="xsd:integer">4</TMBSlot>
             </properties>
         </xc:Application>
 
 
         <xc:Application class="emu::me11dev::Manager" id="50" instance="0" network="local">
             <properties xsi:type="soapenc:Struct" xmlns="urn:xdaq-application:emu::me11dev::Manager">
-              <XMLConfigFilename xsi:type="xsd:string">$HOME/config/pc/tamu_crate_config_2tmbs.xml</XMLConfigFilename>
-              <TMBSlot  xsi:type="xsd:integer">6</TMBSlot>
+                <XMLConfigFilename xsi:type="xsd:string">$HOME/config/pc/tamu_crate_config_2tmbs.xml</XMLConfigFilename>
+                <TMBSlot  xsi:type="xsd:integer">6</TMBSlot>
             </properties>
         </xc:Application>
 
