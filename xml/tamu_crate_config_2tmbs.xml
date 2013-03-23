@@ -17,7 +17,7 @@
          VCC_frmw_ver="4.74"
          VME_CR="EDFF1D0F"
          Warn_On_Shtdwn="false"
-         eth_port="2"/>
+         eth_port="1"/>
     
     <CSC known_problem="" label="ME+1/1/1" problem_location_mask="00">
 
