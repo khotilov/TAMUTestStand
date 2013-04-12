@@ -31,6 +31,7 @@ TestWorkerBase::TestWorkerBase()
 : ccb_(0)
 , tmb_(0)
 , out_(&cout)
+, log_()
 {}
 
 
@@ -134,6 +135,15 @@ void TestWorkerBase::SetTestStatus(const std::string &test, int status)
   testStatuses_[test] = status;
 }
 
+void TestWorkerBase::ReportError(int error)
+{
+  log_.reportError(error);
+}
+
+void TestWorkerBase::SetBoardLabel(std::string board)
+{
+  log_.setBoard(board);
+}
 
 int TestWorkerBase::RunTest(const std::string &test)
 {
@@ -181,18 +191,25 @@ int TestWorkerBase::RunTest(const std::string &test)
   else
   {
     out() << "Test with label " << test << " ... start" << endl;
+    log_.startTest(test);
     if (test != "Dummy")
     {
       PrepareHWForTest();
     }
     // run the test
     result = testProcedures_[test]();
+    log_.endTest(result);
     testResults_[test] = result;
     MessageOK(out(), "Test with label " + test + " status ... ", result);
   }
   
   cout << "Time: " << timer.sec() << "sec for test with label " << test << endl;
   return result;
+}
+
+void TestWorkerBase::SetTester(std::string tester)
+{
+  log_.setTester(tester);
 }
 
 

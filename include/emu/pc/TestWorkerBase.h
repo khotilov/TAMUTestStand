@@ -6,6 +6,7 @@
 #include <vector>
 #include <map>
 #include <boost/function.hpp>
+#include "emu/pc/TestLogger.h"
 
 namespace emu { namespace pc {
 
@@ -69,10 +70,19 @@ public:
   /// Setter for the status of a test with a specific label
   void SetTestStatus(const std::string &test, int status);
 
+  /// Report an error during a test
+  /// Errors reported are written to the log if logging is enabled
+  void ReportError(int error);
+
+  /// Setter for the board label within the logger
+  void SetBoardLabel(std::string);
+
   /// Run a test with specific label.
   /// A special case of a label is "All", which would cause running of all registered tests.
   /// \return 0 if success, numerical error code > 0 if problem
   int RunTest(const std::string &test);
+
+  void SetTester(std::string);
 
   /// Allows to set the results output destination.
   /// Initially, the internal out_ output is set to std::cout in the constructor.
@@ -117,6 +127,8 @@ private:
 
   /// where to store the output with results
   std::ostream * out_ ;
+
+  TestLogger log_;
 
   /// keep _ordered_ list of test labels
   std::vector<std::string> testLabels_;

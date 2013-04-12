@@ -106,7 +106,7 @@ void CCBBackplaneTestModule::CCBBackplaneTestsPage(xgi::Input * in, xgi::Output 
   *out << cgicc::fieldset().set("style","font-size: 11pt; font-family: arial;") << endl;
   *out << cgicc::legend("Board Selection:").set("style", "color:blue") <<endl;
   *out << form().set("method","GET").set("action", "/" + urn + "/SetBoardLabel" ) << endl;
-  *out << "Board Label: " << tm_.boardLabel << cgicc::br() << endl;
+  *out << "Board Label: " << tm_.GetBoardLabel() << cgicc::br() << endl;
   *out << input().set("type", "hidden").set("name", "return").set("value", "CCBBackplaneTestsPage") << endl;
   *out << input().set("type", "text").set("name", "label").set("size", "20").set("value", "") << endl;
   *out << input().set("type","submit").set("value", "Set Board Label").set("style", "color:blue") << endl;
@@ -445,7 +445,7 @@ void CCBBackplaneTestModule::FirmwareTestsPage(xgi::Input * in, xgi::Output * ou
   *out << cgicc::fieldset().set("style","font-size: 11pt; font-family: arial;") << endl;
   *out << cgicc::legend("Board Selection:").set("style", "color:blue") <<endl;
   *out << form().set("method","GET").set("action", "/" + urn + "/SetBoardLabel" ) << endl;
-  *out << "Board Label: " << tm_.boardLabel << cgicc::br() << endl;
+  *out << "Board Label: " << tm_.GetBoardLabel() << cgicc::br() << endl;
   *out << input().set("type", "hidden").set("name", "return").set("value", "FirmwareTestsPage") << endl;
   *out << input().set("type", "text").set("name", "label").set("size", "20").set("value", "") << endl;
   *out << input().set("type","submit").set("value", "Set Board Label").set("style", "color:blue") << endl;
@@ -803,7 +803,7 @@ void CCBBackplaneTestModule::CCBBackplaneLogTestsOutput(xgi::Input * in, xgi::Ou
 
   //string tmb_slot = toolbox::toString("%d", sys_->tmbs()[tmbN_]->slot());
   std::stringstream file_name;
-  file_name << "CCBBackplaneTests_Board" << tm_.boardLabel << "_" << time(NULL) << ".log";
+  file_name << "CCBBackplaneTests_Board" << tm_.GetBoardLabel() << "_" << time(NULL) << ".log";
   emu::utils::saveAsFileDialog(out, tm_.GetTestOutput("CCBBackplaneTester", tmbN_).str(), file_name.str());
 }
 
@@ -835,7 +835,7 @@ void CCBBackplaneTestModule::FirmwareLogTestsOutput(xgi::Input * in, xgi::Output
 
   //string tmb_slot = toolbox::toString("%d", sys_->tmbs()[tmbN_]->slot());
   std::stringstream file_name;
-  file_name << "FirmwareTests_Board" << tm_.boardLabel << "_" << time(NULL) << ".log";
+  file_name << "FirmwareTests_Board" << tm_.GetBoardLabel() << "_" << time(NULL) << ".log";
   emu::utils::saveAsFileDialog(out, tm_.GetTestOutput("FirmwareTester", tmbN_).str(), file_name.str());
 }
 
@@ -850,7 +850,7 @@ void CCBBackplaneTestModule::SetBoardLabel(xgi::Input * in, xgi::Output * out)
   {
     label = cgi["label"]->getValue();
     cout << __func__ << ":  label " << label << endl;
-    tm_.boardLabel = label;
+    tm_.SetBoardLabel(label, tmbN_);
   }
 
   name = cgi.getElement("return");

@@ -33,7 +33,8 @@ Sources=\
 	FirmwareTester.cc \
 	TestResultsManager.cc \
 	TestResultsManagerModule.cc \
-	BasicTable.cc
+	BasicTable.cc \
+	TestLogger.cc
 
 
 IncludeDirs = \

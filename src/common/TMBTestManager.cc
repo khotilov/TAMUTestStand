@@ -77,5 +77,20 @@ std::ostringstream & TMBTestManager::GetTestOutput(std::string test_group, int t
   return testOutputs_[test_group][tmb];
 }
 
+void TMBTestManager::SetBoardLabel(std::string board, int tmb)
+{
+  boardLabel_ = board;
+  std::map< std::string, std::vector<boost::shared_ptr<TestWorkerBase> > >::iterator i = tests_.begin();
+  for(; i != tests_.end(); ++i)
+  {
+    i->second[tmb]->SetBoardLabel(board);
+  }
+}
+
+std::string TMBTestManager::GetBoardLabel()
+{
+  return boardLabel_;
+}
+
 
 }}  // namespaces

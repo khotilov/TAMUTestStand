@@ -50,8 +50,11 @@ public:
   /// If \c tmb number is -1, the "current" tmb in the "current" crate is assumed.
   std::ostringstream & GetTestOutput(std::string test_group, int tmb = -1);
 
-  /// Label of the board being tested
-  std::string boardLabel;
+  /// Sets the label of the board being tested
+  void SetBoardLabel(std::string, int tmb);
+
+  /// Gets the label of the board being tested
+  std::string GetBoardLabel();
 
 private:
 
@@ -80,6 +83,9 @@ private:
   //std::vector<std::ostringstream> testOutputs_;
   std::map<std::string, std::ostringstream * > testOutputs_;
   //std::ostringstream testOutputs_[10];
+
+  /// Label of the board being tested
+  std::string boardLabel_;
 };
 
 
@@ -111,6 +117,7 @@ void TMBTestManager::RegisterTestGroup(const std::string &test_group)
     tmp->SetTMB(tmbs[i]);
     tmp->SetCCB(ccb);
     tmp->RedirectOutput(&testOutputs_[test_group][i]);
+    tmp->SetTester(test_group);
     tests_[test_group].push_back(tmp);
 
     //if (i >= testOutputs_.size())
